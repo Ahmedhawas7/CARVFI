@@ -8,29 +8,35 @@ import './App.css';
 
 function App() {
   const [user, setUser] = useState(null);
-  const [showAuthModal, setShowAuthModal] = useState(true); // دائماً نبدأ بفتح ال modal
+  const [showAuthModal, setShowAuthModal] = useState(true);
   const [activeTab, setActiveTab] = useState('profile');
   const [showAIChat, setShowAIChat] = useState(false);
 
   useEffect(() => {
-    // تحقق من وجود user محفوظ
     const savedUser = localStorage.getItem('carvfi_user');
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
         setUser(userData);
-        setShowAuthModal(false); // إغلق ال modal إذا وجد user
+        setShowAuthModal(false);
       } catch (error) {
-        console.error('Error parsing saved user:', error);
+        console.error('Error parsing user data:', error);
         localStorage.removeItem('carvfi_user');
       }
     }
   }, []);
 
   const handleAuthSuccess = (userData) => {
-    console.log('Auth success:', userData);
-    setUser(userData);
-    localStorage.setItem('carvfi_user', JSON.stringify(userData));
+    console.log('Authentication successful:', userData);
+    
+    // نخزن البيانات الأساسية فقط
+    const simpleUserData = {
+      type: userData.type,
+      address: userData.address
+    };
+    
+    setUser(simpleUserData);
+    localStorage.setItem('carvfi_user', JSON.stringify(simpleUserData));
     setShowAuthModal(false);
   };
 
@@ -40,13 +46,12 @@ function App() {
     setShowAuthModal(true);
   };
 
-  // إذا كان ال modal مفتوح، اعرض فقط ال modal وشاشة التحميل
   if (showAuthModal) {
     return (
       <div className="app">
         <AuthModal 
           isOpen={true}
-          onClose={() => {}} // لا تسمح بالإغلاق إلا بالتسجيل
+          onClose={() => {}} 
           onAuthSuccess={handleAuthSuccess}
         />
         <div className="auth-background">
@@ -65,10 +70,8 @@ function App() {
     );
   }
 
-  // إذا كان فيه user، اعرض الواجهة الرئيسية
   return (
     <div className="app">
-      {/* Header */}
       <header className="header">
         <div className="header-left">
           <h1 className="logo">🌐 CARVFi</h1>
@@ -78,10 +81,7 @@ function App() {
         <div className="header-right">
           <div className="user-info">
             <span className="user-wallet">
-              {user?.type === 'evm' 
-                ? `EVM: ${user?.address?.substring(0, 6)}...${user?.address?.substring(38)}`
-                : `SOL: ${user?.address?.substring(0, 6)}...`
-              }
+              {user?.address ? `${user.address.substring(0, 6)}...${user.address.substring(38)}` : 'No wallet'}
             </span>
             <span className="network-badge">
               {user?.type === 'evm' ? 'Ethereum' : 'Solana'}
@@ -99,7 +99,6 @@ function App() {
         </div>
       </header>
 
-      {/* Navigation */}
       <nav className="navigation">
         {['profile', 'rewards', 'protection'].map(tab => (
           <button
@@ -112,14 +111,12 @@ function App() {
         ))}
       </nav>
 
-      {/* Main Content */}
       <main className="main-content">
         {activeTab === 'profile' && <UserProfile user={user} />}
         {activeTab === 'rewards' && <RewardsDashboard user={user} />}
         {activeTab === 'protection' && <BotProtection user={user} />}
       </main>
 
-      {/* AI Chat */}
       {showAIChat && (
         <AIChat 
           user={user}

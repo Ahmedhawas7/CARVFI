@@ -272,6 +272,31 @@ body {
   margin: 0;
 }
 
+/* Error Message Styles */
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--error);
+  color: var(--error);
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  margin: 1rem 1.5rem 0;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* Wallet Status */
+.wallet-status {
+  font-size: 0.7rem;
+  margin-top: 0.3rem;
+  font-weight: 500;
+}
+
+.wallet-status:not(:empty) {
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  display: inline-block;
+}
+
 /* Header */
 .header {
   display: flex;
@@ -623,6 +648,38 @@ input::placeholder {
   align-items: center;
 }
 
+.ai-header-info h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ai-status {
+  font-size: 0.7rem;
+  color: var(--success);
+  font-weight: 500;
+}
+
+.ai-header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-clear {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.btn-clear:hover {
+  background: var(--glass);
+  color: var(--text-primary);
+}
+
 .ai-chat-messages {
   flex: 1;
   padding: 1.5rem;
@@ -638,6 +695,7 @@ input::placeholder {
   max-width: 80%;
   font-size: 0.8rem;
   line-height: 1.4;
+  animation: messageSlide 0.3s ease-out;
 }
 
 .message.user {
@@ -653,6 +711,17 @@ input::placeholder {
   align-self: flex-start;
   border-bottom-left-radius: 4px;
   border: 1px solid var(--glass-border);
+}
+
+.message-content {
+  line-height: 1.5;
+}
+
+.message-time {
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  margin-top: 0.3rem;
+  opacity: 0.7;
 }
 
 .ai-chat-input {
@@ -706,13 +775,67 @@ input::placeholder {
 .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
 .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
 
-@keyframes bounce {
-  0%, 80%, 100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
-  }
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.typing-dots span {
+  animation: blink 1.4s infinite both;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+.quick-replies {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--glass);
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+}
+
+.quick-replies p {
+  margin: 0 0 0.8rem 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.reply-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reply-btn {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  text-align: left;
+  transition: all 0.3s ease;
+}
+
+.reply-btn:hover:not(:disabled) {
+  background: var(--primary);
+  border-color: var(--primary);
+  transform: translateX(5px);
+}
+
+.reply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Rewards Styles */
@@ -884,6 +1007,73 @@ input::placeholder {
   margin-top: 0.2rem;
 }
 
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+@keyframes blink {
+  0%, 80%, 100% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+@keyframes messageSlide {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+/* AI learning indicator */
+.learning-indicator {
+  position: absolute;
+  top: -8px;
+  right: 10px;
+  background: var(--success);
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.6rem;
+  animation: pulse 2s infinite;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .header {
@@ -943,6 +1133,28 @@ input::placeholder {
   .wallet-info {
     text-align: center;
   }
+
+  .activity-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome-content h1 {
+    font-size: 2rem;
+  }
+  
+  .welcome-content p {
+    font-size: 1rem;
+  }
+  
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .activity-stats {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Scrollbar */
@@ -975,29 +1187,4 @@ input::placeholder {
   display: block;
   opacity: 1;
   visibility: visible;
-  }
-
-/* Error Message Styles */
-.error-message {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid var(--error);
-  color: var(--error);
-  padding: 0.8rem 1rem;
-  border-radius: 8px;
-  margin: 1rem 1.5rem 0;
-  font-size: 0.8rem;
-  text-align: center;
-}
-
-/* Wallet Status */
-.wallet-status {
-  font-size: 0.7rem;
-  margin-top: 0.3rem;
-  font-weight: 500;
-}
-
-.wallet-status:not(:empty) {
-  padding: 0.2rem 0.5rem;
-  border-radius: 6px;
-  display: inline-block;
 }

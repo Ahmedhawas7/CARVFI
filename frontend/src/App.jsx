@@ -31,22 +31,26 @@ function App() {
     const savedUser = localStorage.getItem('carvfi_user');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
+    } else {
+      // إذا مافيش user محفوظ، نفتح الـ AuthModal تلقائياً
+      setShowAuthModal(true);
     }
   };
 
   const handleAuthSuccess = (userData) => {
     setUser(userData);
     localStorage.setItem('carvfi_user', JSON.stringify(userData));
-    setShowAuthModal(false);
+    setShowAuthModal(false); // نغلق الـ modal بعد التسجيل الناجح
   };
 
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('carvfi_user');
-    setShowAuthModal(true);
+    setShowAuthModal(true); // نفتح الـ modal مرة تانيه بعد التسجيل خروج
   };
 
-  if (!user) {
+  // إذا كان الـ modal مفتوح، نعرض فقط الـ modal
+  if (showAuthModal) {
     return (
       <div className="app">
         <AuthModal 
@@ -58,12 +62,14 @@ function App() {
           <div className="loading-content">
             <h1>🌐 CARVFi</h1>
             <p>Web3 Social Platform</p>
+            <p className="loading-subtitle">Connect your wallet to get started</p>
           </div>
         </div>
       </div>
     );
   }
 
+  // إذا كان فيه user مسجل، نعرض الواجهة الرئيسية
   return (
     <div className="app">
       {/* Header */}
@@ -76,8 +82,10 @@ function App() {
         <div className="header-right">
           <div className="user-info">
             <span className="user-wallet">
-              {user.type === 'evm' && `EVM: ${user.address.substring(0, 6)}...${user.address.substring(38)}`}
-              {user.type === 'solana' && `SOL: ${user.address.substring(0, 6)}...`}
+              {user.type === 'evm' 
+                ? `EVM: ${user.address.substring(0, 6)}...${user.address.substring(38)}`
+                : `SOL: ${user.address.substring(0, 6)}...`
+              }
             </span>
             <span className="network-badge">
               {user.type === 'evm' ? 'Ethereum' : 'Solana'}
@@ -131,7 +139,7 @@ function App() {
         )}
       </main>
 
-      {/* AI Chat - Now as part of main interface */}
+      {/* AI Chat */}
       {showAIChat && (
         <AIChat 
           user={user}
@@ -139,13 +147,6 @@ function App() {
           onClose={() => setShowAIChat(false)}
         />
       )}
-
-      {/* Auth Modal */}
-      <AuthModal 
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onAuthSuccess={handleAuthSuccess}
-      />
     </div>
   );
 }

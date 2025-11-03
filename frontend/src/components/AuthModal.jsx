@@ -12,30 +12,24 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
       setIsConnecting(true);
       setError('');
       
-      // طريقة أفضل للتحقق من وجود MetaMask
       if (typeof window.ethereum !== 'undefined') {
-        console.log('MetaMask detected:', window.ethereum);
+        console.log('MetaMask detected');
         
-        // طلب الإذن للوصول إلى الحسابات
         const accounts = await window.ethereum.request({
           method: 'eth_requestAccounts'
         });
         
-        console.log('Connected accounts:', accounts);
+        console.log('Connected account:', accounts[0]);
         
-        if (accounts.length > 0) {
-          onAuthSuccess({
-            type: 'evm',
-            address: accounts[0],
-            provider: window.ethereum
-          });
-        } else {
-          setError('No accounts found. Please check your MetaMask.');
-        }
+        // إرسال البيانات الأساسية فقط (بدون provider/signer)
+        onAuthSuccess({
+          type: 'evm',
+          address: accounts[0],
+          // لا نرسل provider أو signer لأنهم objects معقدة
+        });
       } else {
-        setError('MetaMask not detected. Please install MetaMask or use a Web3 browser.');
+        setError('MetaMask not detected. Please install MetaMask.');
         
-        // عرض رسالة مساعدة
         const installMetaMask = confirm(
           'MetaMask not found. Would you like to install it?'
         );
@@ -49,7 +43,7 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
       if (error.code === 4001) {
         setError('Connection rejected. Please approve the connection in MetaMask.');
       } else {
-        setError('Failed to connect wallet: ' + error.message);
+        setError('Failed to connect wallet. Please try again.');
       }
     } finally {
       setIsConnecting(false);
@@ -61,20 +55,20 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
       setIsConnecting(true);
       setError('');
       
-      // التحقق من وجود Phantom
       const provider = window.solana || window.phantom;
       
       if (provider) {
-        console.log('Solana wallet detected:', provider);
+        console.log('Solana wallet detected');
         
         if (!provider.isConnected) {
           await provider.connect();
         }
         
+        // إرسال البيانات الأساسية فقط
         onAuthSuccess({
           type: 'solana',
           address: provider.publicKey.toString(),
-          provider: provider
+          // لا نرسل provider
         });
       } else {
         setError('Phantom wallet not detected. Please install Phantom.');
@@ -88,7 +82,7 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
       }
     } catch (error) {
       console.error('Error connecting Solana wallet:', error);
-      setError('Failed to connect Solana wallet: ' + error.message);
+      setError('Failed to connect Solana wallet. Please try again.');
     } finally {
       setIsConnecting(false);
     }
@@ -102,7 +96,6 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
-        {/* عرض الأخطاء */}
         {error && (
           <div className="error-message">
             ⚠️ {error}
@@ -134,7 +127,7 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
                   <p>Connect to Ethereum and EVM chains</p>
                   <div className="wallet-status">
                     {typeof window.ethereum !== 'undefined' 
-                      ? '✅ Detected' 
+                      ? '✅ Ready to connect' 
                       : '❌ Not detected'
                     }
                   </div>
@@ -142,20 +135,9 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
                 <button 
                   className="btn btn-connect"
                   onClick={connectEVM}
-                  disabled={isConnecting || typeof window.ethereum === 'undefined'}
+                  disabled={isConnecting}
                 >
                   {isConnecting ? 'Connecting...' : 'Connect'}
-                </button>
-              </div>
-
-              <div className="wallet-option">
-                <div className="wallet-icon">🟠</div>
-                <div className="wallet-info">
-                  <h3>WalletConnect</h3>
-                  <p>Connect with QR code</p>
-                </div>
-                <button className="btn btn-connect" disabled>
-                  Coming Soon
                 </button>
               </div>
             </div>
@@ -170,7 +152,7 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
                   <p>Connect to Solana network</p>
                   <div className="wallet-status">
                     {(window.solana || window.phantom) 
-                      ? '✅ Detected' 
+                      ? '✅ Ready to connect' 
                       : '❌ Not detected'
                     }
                   </div>
@@ -178,20 +160,9 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
                 <button 
                   className="btn btn-connect"
                   onClick={connectSolana}
-                  disabled={isConnecting || !(window.solana || window.phantom)}
+                  disabled={isConnecting}
                 >
                   {isConnecting ? 'Connecting...' : 'Connect'}
-                </button>
-              </div>
-
-              <div className="wallet-option">
-                <div className="wallet-icon">🔷</div>
-                <div className="wallet-info">
-                  <h3>Solflare</h3>
-                  <p>Connect to Solana network</p>
-                </div>
-                <button className="btn btn-connect" disabled>
-                  Coming Soon
                 </button>
               </div>
             </div>

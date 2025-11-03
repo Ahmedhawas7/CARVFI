@@ -1,44 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import AIService from '../services/aiService';
 
 const AIChat = ({ user, onClose }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    // تحميل تاريخ المحادثة إذا موجود
-    const history = AIService.getConversationHistory(user.address);
-    if (history.length > 0) {
-      const formattedMessages = history.flatMap(entry => [
-        { id: Date.now() + Math.random(), text: entry.user, sender: 'user', timestamp: entry.timestamp },
-        { id: Date.now() + Math.random() + 1, text: entry.ai, sender: 'ai', timestamp: entry.timestamp }
-      ]);
-      setMessages(formattedMessages);
-    } else {
-      // رسالة ترحيب أولى ذكية
-      setMessages([
-        {
-          id: 1,
-          text: this.getPersonalizedGreeting(user),
-          sender: 'ai',
-          timestamp: new Date()
-        }
-      ]);
-    }
-  }, [user.address]);
-
-  const getPersonalizedGreeting = (user) => {
-    const greetings = [
-      `Welcome to CARVFi, Web3 explorer! 🌐 I'm your AI assistant, here to help you navigate the decentralized world. What would you like to discover today?`,
-      `Hello there! 🚀 I see you're connected with ${user.type.toUpperCase()}. Ready to explore the future of social finance together?`,
-      `Greetings, pioneer! 💫 You've entered the CARVFi ecosystem. I'm here to guide you through Web3 social networking and DeFi rewards. How can I assist?`,
-      `Hey! 👋 Welcome to your Web3 social hub. I'm your AI companion, learning and growing with you. What's on your mind today?`
-    ];
-    return greetings[Math.floor(Math.random() * greetings.length)];
-  };
+    // رسالة ترحيب أولية
+    setMessages([
+      {
+        id: 1,
+        text: "Hello! I'm your CARVFi AI assistant. I'm here to help you with Web3, blockchain, and everything CARVFi! What would you like to know?",
+        sender: 'ai',
+        timestamp: new Date()
+      }
+    ]);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -48,10 +26,44 @@ const AIChat = ({ user, onClose }) => {
     scrollToBottom();
   }, [messages]);
 
-  const simulateTyping = async (duration = 1000) => {
-    setIsTyping(true);
-    await new Promise(resolve => setTimeout(resolve, duration));
-    setIsTyping(false);
+  // ذكاء اصطناعي مبسط بدون service
+  const generateAIResponse = async (userMessage) => {
+    // محاكاة وقت معالجة
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const lowerMessage = userMessage.toLowerCase();
+    
+    // نظام ردود ذكي مبسط
+    if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+      return "Hello there! 👋 I'm excited to help you explore CARVFi and the world of Web3. What specifically would you like to know?";
+    }
+    else if (lowerMessage.includes('carvfi')) {
+      return "CARVFi is a revolutionary Social FI platform on the Carv network! 🚀 It combines social interactions with DeFi rewards, allowing you to earn points for being active, connecting wallets, and participating in the community.";
+    }
+    else if (lowerMessage.includes('web3') || lowerMessage.includes('blockchain')) {
+      return "Web3 represents the next evolution of the internet - decentralized, user-owned, and built on blockchain technology. 🌐 Unlike Web2 where companies control your data, Web3 gives you ownership and control!";
+    }
+    else if (lowerMessage.includes('reward') || lowerMessage.includes('point')) {
+      return "On CARVFi, you earn rewards by: 💰\n• Chatting with me (+10 points)\n• Updating your profile (+5 points)\n• Connecting wallets (+25 points)\n• Social interactions (+15 points)\nThe more active you are, the more you earn!";
+    }
+    else if (lowerMessage.includes('nft')) {
+      return "NFTs (Non-Fungible Tokens) are unique digital assets on blockchain! 🎨 Each NFT is one-of-a-kind and can represent art, collectibles, or even membership access. CARVFi will soon support NFT displays and trading!";
+    }
+    else if (lowerMessage.includes('defi')) {
+      return "DeFi (Decentralized Finance) is financial services without intermediaries! 💸 Think lending, borrowing, and trading directly on blockchain. CARVFi integrates DeFi principles with social interactions - that's Social FI!";
+    }
+    else if (lowerMessage.includes('help')) {
+      return "I can help you with: 🤖\n• Understanding CARVFi features\n• Web3 and blockchain concepts\n• NFT and DeFi explanations\n• Reward system details\n• Technical guidance\nWhat would you like to explore?";
+    }
+    else {
+      const randomResponses = [
+        "That's an interesting question! I'm constantly learning about Web3 and CARVFi. Could you tell me more about what you'd like to know?",
+        "I love exploring new topics with you! Could you rephrase that or ask about something specific?",
+        "Great question! I'm here to help you navigate CARVFi and Web3. What aspect are you most curious about?",
+        "I'm excited to learn with you! Let me know if you have questions about CARVFi, rewards, Web3, or anything blockchain-related!"
+      ];
+      return randomResponses[Math.floor(Math.random() * randomResponses.length)];
+    }
   };
 
   const handleSendMessage = async () => {
@@ -69,14 +81,7 @@ const AIChat = ({ user, onClose }) => {
     setIsLoading(true);
 
     try {
-      // محاكاة الكتابة لجعلها طبيعية
-      await simulateTyping(800 + Math.random() * 1200);
-
-      // الحصول على رد الذكاء الاصطناعي
-      const aiResponse = await AIService.generateAIResponse(
-        inputMessage, 
-        user.address
-      );
+      const aiResponse = await generateAIResponse(inputMessage);
       
       const aiMessage = {
         id: Date.now() + 1,
@@ -90,7 +95,7 @@ const AIChat = ({ user, onClose }) => {
       console.error('Error in AI chat:', error);
       const errorMessage = {
         id: Date.now() + 1,
-        text: "I encountered a glitch! 🔧 Let me recalibrate... Could you try asking again?",
+        text: "I encountered a small issue! Let me try again... What were you asking about?",
         sender: 'ai',
         timestamp: new Date()
       };
@@ -108,7 +113,6 @@ const AIChat = ({ user, onClose }) => {
   };
 
   const clearChat = () => {
-    AIService.clearConversationHistory(user.address);
     setMessages([
       {
         id: Date.now(),
@@ -119,40 +123,12 @@ const AIChat = ({ user, onClose }) => {
     ]);
   };
 
-  const getQuickReplies = () => {
-    const replies = [
-      "Tell me about CARVFi rewards",
-      "What is Web3?",
-      "How do NFTs work?",
-      "Explain DeFi simply",
-      "What can I do here?"
-    ];
-
-    return (
-      <div className="quick-replies">
-        <p>Quick questions:</p>
-        <div className="reply-buttons">
-          {replies.map((reply, index) => (
-            <button
-              key={index}
-              className="reply-btn"
-              onClick={() => setInputMessage(reply)}
-              disabled={isLoading}
-            >
-              {reply}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="ai-chat-container">
       <div className="ai-chat-header">
         <div className="ai-header-info">
           <h3>🤖 CARVFi AI Assistant</h3>
-          <span className="ai-status">Online • Learning with you</span>
+          <span className="ai-status">Online • Ready to help</span>
         </div>
         <div className="ai-header-actions">
           <button className="btn btn-clear" onClick={clearChat} title="Clear chat">
@@ -174,7 +150,7 @@ const AIChat = ({ user, onClose }) => {
           </div>
         ))}
         
-        {isLoading && !isTyping && (
+        {isLoading && (
           <div className="message ai loading">
             <div className="loading-dots">
               <span></span>
@@ -183,21 +159,6 @@ const AIChat = ({ user, onClose }) => {
             </div>
           </div>
         )}
-
-        {isTyping && (
-          <div className="message ai typing">
-            <div className="typing-indicator">
-              <span>AI is thinking</span>
-              <div className="typing-dots">
-                <span>.</span>
-                <span>.</span>
-                <span>.</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {messages.length === 1 && getQuickReplies()}
         
         <div ref={messagesEndRef} />
       </div>

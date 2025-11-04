@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
-const Dashboard = () => {
+const RewardsDashboard = ({ user, storageService }) => {
   const [userData, setUserData] = useState({
-    points: 1250,
-    streak: 7,
-    level: 3,
+    points: 0,
+    streak: 0,
+    level: 1,
     walletConnected: true
   });
 
@@ -14,7 +14,7 @@ const Dashboard = () => {
       title: "Daily Login",
       description: "Visit the platform daily",
       points: 50,
-      completed: true,
+      completed: false,
       type: "login"
     },
     {
@@ -35,49 +35,15 @@ const Dashboard = () => {
     },
     {
       id: 4,
-      title: "SVM Transaction",
-      description: "Make a transaction on SVM Testnet",
+      title: "Connect Wallet",
+      description: "Connect your Web3 wallet",
       points: 200,
-      completed: false,
-      type: "transaction"
+      completed: true,
+      type: "wallet"
     }
   ]);
 
-  const [userActivities, setUserActivities] = useState([
-    {
-      id: 1,
-      type: "post",
-      platform: "twitter",
-      content: "Just joined CarVFi Web3 Social Platform! 🚀",
-      points: 50,
-      timestamp: "2024-01-15 14:30"
-    },
-    {
-      id: 2,
-      type: "transaction",
-      platform: "svm",
-      content: "SVM Testnet transaction completed",
-      points: 100,
-      timestamp: "2024-01-15 12:15"
-    },
-    {
-      id: 3,
-      type: "login",
-      platform: "system",
-      content: "Daily login reward claimed",
-      points: 25,
-      timestamp: "2024-01-15 09:00"
-    },
-    {
-      id: 4,
-      type: "follow",
-      platform: "twitter",
-      content: "Followed CarVFi official account",
-      points: 75,
-      timestamp: "2024-01-14 16:45"
-    }
-  ]);
-
+  const [userActivities, setUserActivities] = useState([]);
   const [walletTransactions, setWalletTransactions] = useState([
     {
       id: 1,
@@ -104,6 +70,41 @@ const Dashboard = () => {
     }
   ]);
 
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+      loadActivities();
+      checkDailyLogin();
+    }
+  }, [user]);
+
+  const loadUserData = () => {
+    const savedUser = storageService.getUser(user.address);
+    if (savedUser) {
+      setUserData({
+        points: savedUser.points || 0,
+        streak: savedUser.streak || 1,
+        level: savedUser.level || 1,
+        walletConnected: true
+      });
+    }
+  };
+
+  const loadActivities = () => {
+    const activities = storageService.getActivities(user.address);
+    setUserActivities(activities);
+  };
+
+  const checkDailyLogin = () => {
+    const today = new Date().toDateString();
+    const lastLogin = user.lastLogin ? new Date(user.lastLogin).toDateString() : null;
+    
+    if (lastLogin !== today) {
+      // مكافأة الدخول اليومي
+      completeTask(1); // مهمة الدخول اليومي
+    }
+  };
+
   const completeTask = (taskId) => {
     setDailyTasks(tasks =>
       tasks.map(task =>
@@ -112,23 +113,25 @@ const Dashboard = () => {
     );
 
     const task = dailyTasks.find(t => t.id === taskId);
-    if (task) {
+    if (task && user) {
+      // تحديث النقاط
+      storageService.updatePoints(user.address, task.points);
+      
+      // تسجيل النشاط
+      storageService.saveActivity(user.address, {
+        type: task.type,
+        description: `Completed: ${task.title}`,
+        points: task.points
+      });
+
+      // تحديث الواجهة
       setUserData(prev => ({
         ...prev,
         points: prev.points + task.points
       }));
 
-      // Add to activities
-      const newActivity = {
-        id: Date.now(),
-        type: task.type,
-        platform: task.type === 'login' ? 'system' : 'twitter',
-        content: `Completed: ${task.title}`,
-        points: task.points,
-        timestamp: new Date().toLocaleString('en-US')
-      };
-
-      setUserActivities(prev => [newActivity, ...prev]);
+      // إعادة تحميل النشاطات
+      loadActivities();
     }
   };
 
@@ -136,20 +139,47 @@ const Dashboard = () => {
     const loginTask = dailyTasks.find(task => task.type === 'login');
     if (loginTask && !loginTask.completed) {
       completeTask(loginTask.id);
-      setUserData(prev => ({
-        ...prev,
-        streak: prev.streak + 1
-      }));
     }
   };
 
-  // Auto-complete daily login if not completed
-  useEffect(() => {
-    const loginTask = dailyTasks.find(task => task.type === 'login');
-    if (loginTask && !loginTask.completed) {
-      completeTask(loginTask.id);
+  // Helper functions
+  const getActivityColor = (type) => {
+    switch (type) {
+      case 'post': return '#6366f1';
+      case 'transaction': return '#8b5cf6';
+      case 'login': return '#10b981';
+      case 'follow': return '#f59e0b';
+      default: return '#6b7280';
     }
-  }, []);
+  };
+
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case 'post': return '📝';
+      case 'transaction': return '💸';
+      case 'login': return '🔐';
+      case 'follow': return '👥';
+      default: return '📌';
+    }
+  };
+
+  const getTransactionColor = (type) => {
+    switch (type) {
+      case 'send': return '#ef4444';
+      case 'receive': return '#10b981';
+      case 'swap': return '#f59e0b';
+      default: return '#6b7280';
+    }
+  };
+
+  const getTransactionIcon = (type) => {
+    switch (type) {
+      case 'send': return '⬆️';
+      case 'receive': return '⬇️';
+      case 'swap': return '🔄';
+      default: return '📌';
+    }
+  };
 
   return (
     <div className="main-content">
@@ -334,14 +364,14 @@ const Dashboard = () => {
                         fontWeight: '600',
                         margin: '0 0 0.2rem 0'
                       }}>
-                        {activity.content}
+                        {activity.description}
                       </h4>
                       <p style={{ 
                         color: '#6b7280', 
                         fontSize: '0.75rem', 
                         margin: 0
                       }}>
-                        {activity.timestamp}
+                        {new Date(activity.timestamp).toLocaleString()}
                       </p>
                     </div>
                     <span style={{
@@ -369,22 +399,17 @@ const Dashboard = () => {
                       fontSize: '0.7rem',
                       fontWeight: '500'
                     }}>
-                      {activity.platform}
-                    </span>
-                    <span style={{
-                      background: '#f3f4f6',
-                      color: '#6b7280',
-                      padding: '0.2rem 0.5rem',
-                      borderRadius: '6px',
-                      fontSize: '0.7rem',
-                      fontWeight: '500'
-                    }}>
                       {activity.type}
                     </span>
                   </div>
                 </div>
               </div>
             ))}
+            {userActivities.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                No activities yet. Complete tasks to earn points!
+              </div>
+            )}
           </div>
         </div>
 
@@ -572,43 +597,6 @@ const Dashboard = () => {
   );
 };
 
-// Helper functions
-const getActivityColor = (type) => {
-  switch (type) {
-    case 'post': return '#6366f1';
-    case 'transaction': return '#8b5cf6';
-    case 'login': return '#10b981';
-    case 'follow': return '#f59e0b';
-    default: return '#6b7280';
-  }
-};
+export default RewardsDashboard;
 
-const getActivityIcon = (type) => {
-  switch (type) {
-    case 'post': return '📝';
-    case 'transaction': return '💸';
-    case 'login': return '🔐';
-    case 'follow': return '👥';
-    default: return '📌';
-  }
-};
-
-const getTransactionColor = (type) => {
-  switch (type) {
-    case 'send': return '#ef4444';
-    case 'receive': return '#10b981';
-    case 'swap': return '#f59e0b';
-    default: return '#6b7280';
-  }
-};
-
-const getTransactionIcon = (type) => {
-  switch (type) {
-    case 'send': return '⬆️';
-    case 'receive': return '⬇️';
-    case 'swap': return '🔄';
-    default: return '📌';
-  }
-};
-
-export default Dashboard;
+        

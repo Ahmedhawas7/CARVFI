@@ -577,6 +577,27 @@ const RewardsDashboard = ({ user, storageService }) => {
               🔗 Make SVM Transaction
             </button>
 
+<button
+  onClick={() => {
+    console.log('All Users:', storageService.getAllUsers());
+    console.log('Current User:', user);
+    console.log('Activities:', storageService.getActivities(user.walletAddress));
+  }}
+  style={{
+    padding: '0.8rem 1rem',
+    background: '#6b7280',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '0.9rem',
+    fontWeight: '500',
+    cursor: 'pointer',
+    textAlign: 'left'
+  }}
+>
+  🔧 Debug Data
+</button>
+
             <button
               style={{
                 padding: '0.8rem 1rem',

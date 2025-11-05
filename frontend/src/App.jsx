@@ -258,16 +258,24 @@ function App() {
       </header>
 
       <nav className="navigation">
-        {['dashboard', 'profile', 'protection'].map(tab => (
-          <button
-            key={tab}
-            className={`nav-btn ${activeTab === tab ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab === 'dashboard' ? 'Dashboard' : tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </nav>
+  {['dashboard', 'profile', 'protection', 'ai-assistant'].map(tab => (
+    <button
+      key={tab}
+      className={`nav-btn ${activeTab === tab ? 'active' : ''}`}
+      onClick={() => {
+        if (tab === 'ai-assistant') {
+          setShowAIAssistant(true);
+        } else {
+          setActiveTab(tab);
+        }
+      }}
+    >
+      {tab === 'dashboard' ? 'Dashboard' : 
+       tab === 'ai-assistant' ? 'AI Assistant' : 
+       tab.charAt(0).toUpperCase() + tab.slice(1)}
+    </button>
+  ))}
+</nav>
 
       <main className="main-content">
         {activeTab === 'dashboard' && <RewardsDashboard user={user} storageService={StorageService} />}

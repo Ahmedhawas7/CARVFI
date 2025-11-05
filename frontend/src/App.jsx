@@ -4,6 +4,7 @@ import UserProfile from './components/UserProfile';
 import AIChat from './components/AIChat';
 import RewardsDashboard from './components/RewardsDashboard';
 import BotProtection from './components/BotProtection';
+import AIAssistant from './components/AIAssistant'; // أضف هذا السطر
 import './App.css';
 
 // خدمة تخزين محلية محسنة
@@ -138,6 +139,7 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showAIChat, setShowAIChat] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false); // أضف هذا السطر
 
   useEffect(() => {
     const savedUser = StorageService.getCurrentUser();
@@ -258,24 +260,24 @@ function App() {
       </header>
 
       <nav className="navigation">
-  {['dashboard', 'profile', 'protection', 'ai-assistant'].map(tab => (
-    <button
-      key={tab}
-      className={`nav-btn ${activeTab === tab ? 'active' : ''}`}
-      onClick={() => {
-        if (tab === 'ai-assistant') {
-          setShowAIAssistant(true);
-        } else {
-          setActiveTab(tab);
-        }
-      }}
-    >
-      {tab === 'dashboard' ? 'Dashboard' : 
-       tab === 'ai-assistant' ? 'AI Assistant' : 
-       tab.charAt(0).toUpperCase() + tab.slice(1)}
-    </button>
-  ))}
-</nav>
+        {['dashboard', 'profile', 'protection', 'ai-assistant'].map(tab => (
+          <button
+            key={tab}
+            className={`nav-btn ${activeTab === tab ? 'active' : ''}`}
+            onClick={() => {
+              if (tab === 'ai-assistant') {
+                setShowAIAssistant(true);
+              } else {
+                setActiveTab(tab);
+              }
+            }}
+          >
+            {tab === 'dashboard' ? 'Dashboard' : 
+             tab === 'ai-assistant' ? 'AI Assistant' : 
+             tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </nav>
 
       <main className="main-content">
         {activeTab === 'dashboard' && <RewardsDashboard user={user} storageService={StorageService} />}
@@ -283,12 +285,19 @@ function App() {
         {activeTab === 'protection' && <BotProtection user={user} />}
       </main>
 
+      {showAIChat && (
+        <AIChat 
+          user={user}
+          onClose={() => setShowAIChat(false)}
+        />
+      )}
+
       {showAIAssistant && (
-  <AIAssistant 
-    user={user}
-    onClose={() => setShowAIAssistant(false)}
-  />
-)}
+        <AIAssistant 
+          user={user}
+          onClose={() => setShowAIAssistant(false)}
+        />
+      )}
     </div>
   );
 }

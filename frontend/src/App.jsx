@@ -22,8 +22,6 @@ const StorageService = {
     
     localStorage.setItem('carvfi_users', JSON.stringify(users));
     localStorage.setItem('carvfi_current_user', JSON.stringify(users[userKey]));
-    
-    console.log('💾 User saved:', users[userKey]);
   },
 
   getCurrentUser: () => {
@@ -50,7 +48,6 @@ const StorageService = {
         users[userKey].lastUpdated = new Date().toISOString();
         localStorage.setItem('carvfi_users', JSON.stringify(users));
         
-        // تحديث المستخدم الحالي
         const currentUser = StorageService.getCurrentUser();
         if (currentUser && currentUser.walletAddress?.toLowerCase() === userKey) {
           currentUser.streak = users[userKey].streak;
@@ -74,7 +71,6 @@ const StorageService = {
       users[userKey].lastUpdated = new Date().toISOString();
       localStorage.setItem('carvfi_users', JSON.stringify(users));
       
-      // تحديث المستخدم الحالي أيضاً
       const currentUser = StorageService.getCurrentUser();
       if (currentUser && currentUser.walletAddress?.toLowerCase() === userKey) {
         currentUser.points = users[userKey].points;
@@ -109,17 +105,12 @@ const AppContent = () => {
   const { isConnected, publicKey, balance, walletName, connectWallet, disconnectWallet } = useWallet();
   const [user, setUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
-    console.log('🔄 Wallet state changed:', { isConnected, publicKey });
-    
     if (isConnected && publicKey) {
       const savedUser = StorageService.getCurrentUser();
-      console.log('💾 Saved user from storage:', savedUser);
-      
       if (savedUser && savedUser.walletAddress === publicKey) {
-        // المستخدم مسجل مسبقاً - تحديث البيانات
-        console.log('✅ Existing user found - updating data');
         const newStreak = StorageService.updateStreak(publicKey);
         const updatedUser = {
           ...savedUser,
@@ -127,7 +118,6 @@ const AppContent = () => {
         };
         setUser(updatedUser);
         
-        // تسجيل نشاط الدخول
         if (newStreak > 0) {
           StorageService.saveActivity(publicKey, {
             type: 'login',
@@ -137,27 +127,20 @@ const AppContent = () => {
           StorageService.updatePoints(publicKey, 10);
         }
       } else {
-        // مستخدم جديد - فتح مودال التسجيل
-        console.log('🆕 New user detected - opening auth modal');
         setShowAuthModal(true);
         setUser(null);
       }
     } else {
-      // المحفظة غير متصلة
-      console.log('🔌 Wallet disconnected');
       setUser(null);
       setShowAuthModal(false);
     }
   }, [isConnected, publicKey]);
 
   const handleAuthSuccess = (userData) => {
-    console.log('🎉 Authentication successful:', userData);
-    
     const userWithStats = {
       walletAddress: publicKey,
       type: 'solana',
       walletName: walletName,
-      // كل البيانات الجديدة من الفورم
       username: userData.username,
       firstName: userData.firstName,
       lastName: userData.lastName,
@@ -167,8 +150,7 @@ const AppContent = () => {
       twitter: userData.twitter,
       telegram: userData.telegram,
       avatar: userData.avatar,
-      // الإحصائيات
-      points: 50, // نقاط المكافأة للتسجيل
+      points: 50,
       streak: 1,
       level: 1,
       loginCount: 1,
@@ -177,28 +159,20 @@ const AppContent = () => {
       lastUpdated: new Date().toISOString()
     };
     
-    // حفظ في التخزين المحلي
     StorageService.saveUser(userWithStats);
-    
-    // تسجيل نشاط التسجيل
     StorageService.saveActivity(publicKey, {
       type: 'registration',
       description: `New user registered successfully`,
       points: 50
     });
     
-    // تحميل بيانات المستخدم المحدثة
     const updatedUser = StorageService.getUser(publicKey);
-    
     setUser(updatedUser);
     setShowAuthModal(false);
-    
-    console.log('✅ User registration completed:', updatedUser);
   };
 
   const handleConnectWallet = async () => {
     try {
-      console.log('🔗 Connecting wallet...');
       await connectWallet('backpack');
     } catch (error) {
       console.error('❌ Failed to connect wallet:', error);
@@ -206,65 +180,58 @@ const AppContent = () => {
   };
 
   const handleLogout = () => {
-    console.log('🚪 User logging out');
     disconnectWallet();
     setUser(null);
     localStorage.removeItem('carvfi_current_user');
   };
 
-  // إذا لم يكن هناك محفظة متصلة، عرض شاشة الترحيب
+  // شاشة الترحيب قبل الربط
   if (!isConnected) {
     return (
-      <div className="app">
-        <div className="auth-background">
-          <div className="welcome-content">
-            <h1>🌐 CARVFi</h1>
-            <p>Web3 Social Platform on Carv SVM</p>
-            <div className="welcome-features">
-              <div className="feature">🤖 AI Assistant</div>
-              <div className="feature">💰 Rewards System</div>
-              <div className="feature">🛡️ Bot Protection</div>
-              <div className="feature">🎒 BackPack Support</div>
-            </div>
-            <button 
-              className="btn btn-primary connect-btn"
-              onClick={handleConnectWallet}
-            >
-              Connect BackPack Wallet
-            </button>
-            <p className="wallet-info">
-              Connect your BackPack wallet to start earning CARV rewards
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+      <div className="modern-app">
+        <div className="hero-section">
+          <div className="hero-background">
+            <div className="hero-content">
+              <div className="logo-section">
+                <div className="logo-icon">🌐</div>
+                <h1 className="hero-title">CARVFi</h1>
+                <p className="hero-subtitle">Next Generation Social Finance</p>
+              </div>
+              
+              <div className="features-grid">
+                <div className="feature-card">
+                  <div className="feature-icon">🤖</div>
+                  <h3>AI Assistant</h3>
+                  <p>Smart AI-powered guidance</p>
+                </div>
+                <div className="feature-card">
+                  <div className="feature-icon">💰</div>
+                  <h3>Social Rewards</h3>
+                  <p>Earn while you socialize</p>
+                </div>
+                <div className="feature-card">
+                  <div className="feature-icon">🛡️</div>
+                  <h3>Bot Protection</h3>
+                  <p>Advanced security system</p>
+                </div>
+                <div className="feature-card">
+                  <div className="feature-icon">🎒</div>
+                  <h3>BackPack Ready</h3>
+                  <p>Seamless wallet integration</p>
+                </div>
+              </div>
 
-  // إذا كان المستخدم متصلاً ولكن لم يكمل التسجيل
-  if (isConnected && publicKey && !user) {
-    console.log('🚨 Rendering auth modal state');
-    return (
-      <div className="app">
-        <AuthModal 
-          isOpen={true}
-          onClose={() => {
-            console.log('❌ Auth modal closed without completion');
-            disconnectWallet();
-          }} 
-          onAuthSuccess={handleAuthSuccess}
-          walletAddress={publicKey}
-        />
-        <div className="auth-background">
-          <div className="welcome-content">
-            <h1>🌐 CARVFi</h1>
-            <p>Complete your profile to continue</p>
-            <div className="connected-wallet">
-              <p>Connected: {publicKey?.slice(0, 8)}...{publicKey?.slice(-6)}</p>
-              <p>Wallet: {walletName}</p>
-              <p>Balance: {parseFloat(balance).toFixed(4)} CARV</p>
-              <p style={{color: '#f59e0b', fontSize: '14px', marginTop: '10px'}}>
-                ⚠️ Please complete your profile in the modal above
+              <button 
+                className="cta-button"
+                onClick={handleConnectWallet}
+              >
+                <span className="button-icon">🔗</span>
+                Connect BackPack Wallet
+                <span className="button-glow"></span>
+              </button>
+              
+              <p className="cta-subtext">
+                Join the future of social finance on Carv SVM
               </p>
             </div>
           </div>
@@ -273,101 +240,120 @@ const AppContent = () => {
     );
   }
 
-  // الواجهة الرئيسية عندما يكون المستخدم متصلاً ومسجلاً
-  if (isConnected && publicKey && user) {
-    console.log('🎯 Rendering main app with user:', user);
+  // شاشة إكمال التسجيل
+  if (isConnected && publicKey && !user) {
     return (
-      <div className="app">
-        <header className="header">
-          <div className="header-left">
-            <h1 className="logo">🌐 CARVFi</h1>
-            <p className="tagline">Web3 Social Platform</p>
-          </div>
-          
-          <div className="header-right">
-            <div className="user-info">
-              <div className="user-avatar">
-                {user.avatar ? (
-                  <img src={user.avatar} alt="Profile" className="avatar-img" />
-                ) : (
-                  <div className="avatar-placeholder">
-                    {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+      <div className="modern-app">
+        <AuthModal 
+          isOpen={true}
+          onClose={() => disconnectWallet()}
+          onAuthSuccess={handleAuthSuccess}
+          walletAddress={publicKey}
+        />
+        <div className="hero-section">
+          <div className="hero-background">
+            <div className="hero-content">
+              <div className="loading-state">
+                <div className="loading-spinner"></div>
+                <h2>Almost There! 🚀</h2>
+                <p>Complete your profile to unlock CARVFi</p>
+                <div className="wallet-preview">
+                  <div className="wallet-badge">
+                    <span className="badge-icon">🎒</span>
+                    Connected with {walletName}
                   </div>
-                )}
-              </div>
-              <div className="user-details">
-                <span className="user-name">
-                  {user.firstName} {user.lastName}
-                </span>
-                <span className="user-wallet">
-                  {publicKey?.slice(0, 6)}...{publicKey?.slice(-4)}
-                </span>
-                <span className="balance-info">
-                  {parseFloat(balance).toFixed(4)} CARV
-                </span>
-                <span className="user-points">
-                  {user.points || 0} points | Streak: {user.streak || 0} days
-                </span>
+                  <p className="wallet-address">{publicKey?.slice(0, 8)}...{publicKey?.slice(-6)}</p>
+                </div>
               </div>
             </div>
-            <button className="logout-btn" onClick={handleLogout}>
-              Logout
-            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // الواجهة الرئيسية
+  if (isConnected && publicKey && user) {
+    return (
+      <div className="modern-app">
+        {/* Header */}
+        <header className="modern-header">
+          <div className="header-container">
+            <div className="brand-section">
+              <div className="brand-logo">
+                <span className="logo-emoji">🌐</span>
+                <div className="brand-text">
+                  <h1>CARVFi</h1>
+                  <span className="beta-badge">Beta</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="user-section">
+              <div className="user-profile">
+                <div className="avatar-container">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt="Profile" className="user-avatar" />
+                  ) : (
+                    <div className="avatar-placeholder">
+                      {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
+                    </div>
+                  )}
+                  <div className="online-indicator"></div>
+                </div>
+                <div className="user-info">
+                  <span className="user-name">{user.firstName} {user.lastName}</span>
+                  <span className="user-handle">@{user.username}</span>
+                </div>
+              </div>
+              
+              <div className="wallet-display">
+                <div className="balance-card">
+                  <span className="balance-amount">{parseFloat(balance).toFixed(2)}</span>
+                  <span className="balance-currency">CARV</span>
+                </div>
+                <button className="logout-btn" onClick={handleLogout}>
+                  <span className="logout-icon">⎋</span>
+                </button>
+              </div>
+            </div>
           </div>
         </header>
 
-        <main className="main-content">
-          <div className="dashboard">
-            <div className="welcome-section">
-              <h2>🎉 Welcome back, {user.firstName}!</h2>
-              <p>Your CARVFi dashboard is ready</p>
-            </div>
-            
-            <div className="profile-card">
-              <h3>👤 Profile Information</h3>
-              <div className="profile-grid">
-                <div className="profile-item">
-                  <strong>Username:</strong> {user.username}
-                </div>
-                <div className="profile-item">
-                  <strong>Email:</strong> {user.email}
-                </div>
-                {user.carvPlayUsername && (
-                  <div className="profile-item">
-                    <strong>Carv Play:</strong> {user.carvPlayUsername}
-                  </div>
-                )}
-                {user.carvUID && (
-                  <div className="profile-item">
-                    <strong>Carv UID:</strong> {user.carvUID}
-                  </div>
-                )}
-                {user.twitter && (
-                  <div className="profile-item">
-                    <strong>Twitter:</strong> {user.twitter}
-                  </div>
-                )}
-                {user.telegram && (
-                  <div className="profile-item">
-                    <strong>Telegram:</strong> {user.telegram}
-                  </div>
-                )}
-              </div>
-            </div>
+        {/* Navigation */}
+        <nav className="modern-nav">
+          <div className="nav-container">
+            {['dashboard', 'profile', 'rewards', 'social'].map(tab => (
+              <button
+                key={tab}
+                className={`nav-item ${activeTab === tab ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                <span className="nav-icon">
+                  {tab === 'dashboard' && '📊'}
+                  {tab === 'profile' && '👤'}
+                  {tab === 'rewards' && '💰'}
+                  {tab === 'social' && '🤝'}
+                </span>
+                <span className="nav-label">
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </nav>
 
-            <div className="wallet-card">
-              <h3>💰 Wallet Information</h3>
-              <div className="wallet-info">
-                <p><strong>Address:</strong> {publicKey}</p>
-                <p><strong>Balance:</strong> {balance} CARV</p>
-                <p><strong>Network:</strong> Carv SVM Testnet</p>
-                <p><strong>Wallet:</strong> {walletName}</p>
-              </div>
-            </div>
+        {/* Main Content */}
+        <main className="modern-main">
+          <div className="main-container">
             
-            <div className="stats-card">
-              <h3>📊 Your Stats</h3>
-              <div className="stats-grid">
+            {/* Welcome Section */}
+            <div className="welcome-banner">
+              <div className="welcome-content">
+                <h2>Welcome back, {user.firstName}! 👋</h2>
+                <p>Ready to explore the world of Social Finance?</p>
+              </div>
+              <div className="stats-overview">
                 <div className="stat-item">
                   <div className="stat-value">{user.points || 0}</div>
                   <div className="stat-label">Points</div>
@@ -377,14 +363,122 @@ const AppContent = () => {
                   <div className="stat-label">Day Streak</div>
                 </div>
                 <div className="stat-item">
-                  <div className="stat-value">{user.level || 1}</div>
+                  <div className="stat-value">Lv. {user.level || 1}</div>
                   <div className="stat-label">Level</div>
                 </div>
-                <div className="stat-item">
-                  <div className="stat-value">{user.loginCount || 1}</div>
-                  <div className="stat-label">Logins</div>
+              </div>
+            </div>
+
+            {/* Dashboard Grid */}
+            <div className="dashboard-grid">
+              
+              {/* Profile Card */}
+              <div className="dashboard-card profile-card">
+                <div className="card-header">
+                  <h3>👤 Personal Profile</h3>
+                  <span className="card-badge">Complete</span>
+                </div>
+                <div className="card-content">
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <label>Email</label>
+                      <span>{user.email}</span>
+                    </div>
+                    {user.carvPlayUsername && (
+                      <div className="info-item">
+                        <label>Carv Play</label>
+                        <span>{user.carvPlayUsername}</span>
+                      </div>
+                    )}
+                    {user.twitter && (
+                      <div className="info-item">
+                        <label>Twitter</label>
+                        <span>{user.twitter}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
+
+              {/* Wallet Card */}
+              <div className="dashboard-card wallet-card">
+                <div className="card-header">
+                  <h3>💰 Wallet</h3>
+                  <span className="network-badge">Carv SVM</span>
+                </div>
+                <div className="card-content">
+                  <div className="wallet-info">
+                    <div className="balance-display">
+                      <div className="crypto-amount">{parseFloat(balance).toFixed(4)}</div>
+                      <div className="crypto-name">CARV</div>
+                    </div>
+                    <div className="wallet-details">
+                      <p className="wallet-type">Connected with {walletName}</p>
+                      <p className="wallet-address">{publicKey?.slice(0, 12)}...{publicKey?.slice(-8)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="dashboard-card actions-card">
+                <div className="card-header">
+                  <h3>⚡ Quick Actions</h3>
+                </div>
+                <div className="card-content">
+                  <div className="actions-grid">
+                    <button className="action-btn">
+                      <span className="action-icon">🤖</span>
+                      AI Assistant
+                    </button>
+                    <button className="action-btn">
+                      <span className="action-icon">💰</span>
+                      Earn Rewards
+                    </button>
+                    <button className="action-btn">
+                      <span className="action-icon">🛡️</span>
+                      Security Check
+                    </button>
+                    <button className="action-btn">
+                      <span className="action-icon">🌐</span>
+                      Social Feed
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="dashboard-card activity-card">
+                <div className="card-header">
+                  <h3>📈 Recent Activity</h3>
+                </div>
+                <div className="card-content">
+                  <div className="activity-list">
+                    <div className="activity-item">
+                      <div className="activity-icon">🎉</div>
+                      <div className="activity-content">
+                        <p>Account Created</p>
+                        <span>+50 points</span>
+                      </div>
+                    </div>
+                    <div className="activity-item">
+                      <div className="activity-icon">🔗</div>
+                      <div className="activity-content">
+                        <p>Wallet Connected</p>
+                        <span>Now</span>
+                      </div>
+                    </div>
+                    <div className="activity-item">
+                      <div className="activity-icon">🔥</div>
+                      <div className="activity-content">
+                        <p>Daily Login</p>
+                        <span>+10 points</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         </main>
@@ -392,21 +486,7 @@ const AppContent = () => {
     );
   }
 
-  // شاشة التحميل
-  return (
-    <div className="app">
-      <div className="auth-background">
-        <div className="welcome-content">
-          <h1>🌐 CARVFi</h1>
-          <p>Loading your profile...</p>
-          <div className="connected-wallet">
-            <p>Connected: {publicKey?.slice(0, 8)}...{publicKey?.slice(-6)}</p>
-            <p>Please wait...</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 };
 
 function App() {

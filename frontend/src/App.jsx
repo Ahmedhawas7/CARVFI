@@ -4,115 +4,8 @@ import { WalletProvider, useWallet } from './contexts/WalletContext';
 import AuthModal from './components/AuthModal';
 import RewardsDashboard from './components/RewardsDashboard';
 import UserProfile from './components/UserProfile';
+import StorageService from './services/StorageService';
 import './App.css';
-
-// خدمة تخزين محلية
-const StorageService = {
-  saveUser: (userData) => {
-    const users = JSON.parse(localStorage.getItem('carvfi_users') || '{}');
-    const userKey = userData.walletAddress?.toLowerCase();
-    
-    users[userKey] = {
-      ...userData,
-      points: userData.points || 0,
-      streak: userData.streak || 1,
-      level: userData.level || 1,
-      loginCount: userData.loginCount || 1,
-      lastLogin: userData.lastLogin || new Date().toISOString(),
-      createdAt: userData.createdAt || new Date().toISOString(),
-      lastUpdated: new Date().toISOString()
-    };
-    
-    localStorage.setItem('carvfi_users', JSON.stringify(users));
-    localStorage.setItem('carvfi_current_user', JSON.stringify(users[userKey]));
-  },
-
-  getCurrentUser: () => {
-    return JSON.parse(localStorage.getItem('carvfi_current_user') || 'null');
-  },
-
-  getUser: (walletAddress) => {
-    const users = JSON.parse(localStorage.getItem('carvfi_users') || '{}');
-    return users[walletAddress?.toLowerCase()];
-  },
-
-  updateStreak: (walletAddress) => {
-    const users = JSON.parse(localStorage.getItem('carvfi_users') || '{}');
-    const userKey = walletAddress?.toLowerCase();
-    
-    if (users[userKey]) {
-      const today = new Date().toDateString();
-      const lastLogin = users[userKey].lastLogin ? new Date(users[userKey].lastLogin).toDateString() : null;
-      
-      if (lastLogin !== today) {
-        users[userKey].streak = (users[userKey].streak || 0) + 1;
-        users[userKey].lastLogin = new Date().toISOString();
-        users[userKey].loginCount = (users[userKey].loginCount || 0) + 1;
-        users[userKey].lastUpdated = new Date().toISOString();
-        localStorage.setItem('carvfi_users', JSON.stringify(users));
-        
-        const currentUser = StorageService.getCurrentUser();
-        if (currentUser && currentUser.walletAddress?.toLowerCase() === userKey) {
-          currentUser.streak = users[userKey].streak;
-          currentUser.lastLogin = users[userKey].lastLogin;
-          currentUser.loginCount = users[userKey].loginCount;
-          localStorage.setItem('carvfi_current_user', JSON.stringify(currentUser));
-        }
-        
-        return users[userKey].streak;
-      }
-    }
-    return 0;
-  },
-
-  updatePoints: (walletAddress, pointsToAdd) => {
-    const users = JSON.parse(localStorage.getItem('carvfi_users') || '{}');
-    const userKey = walletAddress?.toLowerCase();
-    
-    if (users[userKey]) {
-      users[userKey].points = (users[userKey].points || 0) + pointsToAdd;
-      users[userKey].lastUpdated = new Date().toISOString();
-      localStorage.setItem('carvfi_users', JSON.stringify(users));
-      
-      const currentUser = StorageService.getCurrentUser();
-      if (currentUser && currentUser.walletAddress?.toLowerCase() === userKey) {
-        currentUser.points = users[userKey].points;
-        localStorage.setItem('carvfi_current_user', JSON.stringify(currentUser));
-      }
-      
-      return users[userKey].points;
-    }
-    return 0;
-  },
-
-  saveActivity: (walletAddress, activity) => {
-    const activities = JSON.parse(localStorage.getItem('carvfi_activities') || '{}');
-    const userKey = walletAddress?.toLowerCase();
-    
-    if (!activities[userKey]) {
-      activities[userKey] = [];
-    }
-    
-    activities[userKey].unshift({
-      id: Date.now().toString(),
-      ...activity,
-      timestamp: new Date().toISOString()
-    });
-    
-    activities[userKey] = activities[userKey].slice(0, 50);
-    localStorage.setItem('carvfi_activities', JSON.stringify(activities));
-  },
-
-  // دالة جديدة للتحقق من تسجيل الدخول
-  isUserLoggedIn: () => {
-    return !!localStorage.getItem('carvfi_current_user');
-  },
-
-  // دالة جديدة للحصول على بيانات المستخدم الحالي
-  getCurrentUserData: () => {
-    return StorageService.getCurrentUser();
-  }
-};
 
 const AppContent = () => {
   const { isConnected, publicKey, balance, walletName, connectWallet, disconnectWallet } = useWallet();
@@ -123,13 +16,13 @@ const AppContent = () => {
 
   useEffect(() => {
     if (isConnected && publicKey) {
-      const savedUser = StorageService.getCurrentUser();
+      const savedUser = StorageService.getCurrentUserData();
+      
       if (savedUser && savedUser.walletAddress === publicKey) {
+        // تحديث streak والنقاط
         const newStreak = StorageService.updateStreak(publicKey);
-        const updatedUser = {
-          ...savedUser,
-          streak: newStreak || savedUser.streak
-        };
+        const updatedUser = StorageService.getCurrentUserData();
+        
         setUser(updatedUser);
         setShowAuthModal(false);
 
@@ -151,63 +44,50 @@ const AppContent = () => {
     }
   }, [isConnected, publicKey]);
 
-  const handleAuthSuccess = (userData) => {
+  const handleAuthSuccess = async (userData) => {
     console.log('🎉 handleAuthSuccess called with:', userData);
     
-    // حفظ البيانات مباشرة في localStorage
-    const userWithStats = {
-      walletAddress: publicKey,
-      type: 'solana',
-      walletName: walletName,
-      username: userData.username,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      email: userData.email,
-      carvPlayUsername: userData.carvPlayUsername,
-      carvUID: userData.carvUID,
-      twitter: userData.twitter,
-      telegram: userData.telegram,
-      avatar: userData.avatar,
-      points: 50,
-      streak: 1,
-      level: 1,
-      loginCount: 1,
-      lastLogin: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      lastUpdated: new Date().toISOString()
-    };
-    
-    // حفظ مباشر في localStorage
-    const users = JSON.parse(localStorage.getItem('carvfi_users') || '{}');
-    const userKey = publicKey?.toLowerCase();
-    users[userKey] = userWithStats;
-    localStorage.setItem('carvfi_users', JSON.stringify(users));
-    localStorage.setItem('carvfi_current_user', JSON.stringify(userWithStats));
-    
-    // حفظ النشاط
-    const activities = JSON.parse(localStorage.getItem('carvfi_activities') || '{}');
-    if (!activities[userKey]) {
-      activities[userKey] = [];
+    try {
+      // استخدام StorageService الحقيقي
+      const result = StorageService.saveUserData({
+        address: publicKey,
+        username: userData.username,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        carvPlayUsername: userData.carvPlayUsername,
+        carvUID: userData.carvUID,
+        twitter: userData.twitter,
+        telegram: userData.telegram,
+        avatar: userData.avatar,
+        type: 'solana'
+      });
+
+      if (result.success) {
+        console.log('✅ User data saved via StorageService');
+        
+        // حفظ نشاط التسجيل
+        StorageService.saveActivity(publicKey, {
+          type: 'registration',
+          description: 'New user registered successfully',
+          points: 50
+        });
+
+        // تحديث state
+        const savedUser = StorageService.getCurrentUserData();
+        setUser(savedUser);
+        setShowAuthModal(false);
+        
+        console.log('✅ User state updated and modal closed');
+        
+        // الانتقال إلى Dashboard
+        navigate('/');
+      } else {
+        console.error('❌ Failed to save user data:', result.error);
+      }
+    } catch (error) {
+      console.error('❌ Error in handleAuthSuccess:', error);
     }
-    activities[userKey].unshift({
-      id: Date.now().toString(),
-      type: 'registration',
-      description: 'New user registered successfully',
-      points: 50,
-      timestamp: new Date().toISOString()
-    });
-    localStorage.setItem('carvfi_activities', JSON.stringify(activities));
-    
-    console.log('✅ User data saved to localStorage');
-    
-    // تحديث state مباشرة
-    setUser(userWithStats);
-    setShowAuthModal(false);
-    
-    console.log('✅ User state updated and modal closed');
-    
-    // الانتقال إلى Dashboard
-    navigate('/');
   };
 
   const handleConnectWallet = async () => {
@@ -221,7 +101,7 @@ const AppContent = () => {
   const handleLogout = () => {
     disconnectWallet();
     setUser(null);
-    localStorage.removeItem('carvfi_current_user');
+    StorageService.logout();
     navigate('/');
   };
 

@@ -1,79 +1,39 @@
-// src/services/StorageService.js
+// في frontend/src/services/StorageService.js - أضف هذه الدوال
 class StorageService {
-  static getKey(walletAddress, key) {
-    return `carvfi_${walletAddress}_${key}`;
-  }
-
-  static saveUser(user) {
-    if (!user || !user.walletAddress) return;
-    localStorage.setItem(this.getKey(user.walletAddress, 'user'), JSON.stringify(user));
-    localStorage.setItem('carvfi_current_user', user.walletAddress);
-  }
-
-  static getUser(walletAddress) {
-    const data = localStorage.getItem(this.getKey(walletAddress, 'user'));
-    return data ? JSON.parse(data) : null;
-  }
-
-  static getCurrentUser() {
-    const wallet = localStorage.getItem('carvfi_current_user');
-    if (!wallet) return null;
-    return this.getUser(wallet);
-  }
-
-  static saveActivity(walletAddress, activity) {
-    const key = this.getKey(walletAddress, 'activities');
-    const activities = this.getActivities(walletAddress);
-    activities.push({
-      ...activity,
-      date: new Date().toISOString()
-    });
-    localStorage.setItem(key, JSON.stringify(activities));
-  }
-
-  static getActivities(walletAddress) {
-    const data = localStorage.getItem(this.getKey(walletAddress, 'activities'));
-    return data ? JSON.parse(data) : [];
-  }
-
-  static updatePoints(walletAddress, amount = 0) {
-    const user = this.getUser(walletAddress);
-    if (!user) return;
-    user.points = (user.points || 0) + amount;
-    this.saveUser(user);
-  }
-
-  static getPoints(walletAddress) {
-    const user = this.getUser(walletAddress);
-    return user ? user.points || 0 : 0;
-  }
-
-  static updateStreak(walletAddress) {
-    const key = this.getKey(walletAddress, 'streak');
-    const lastLoginKey = this.getKey(walletAddress, 'last_login');
-    const lastLogin = localStorage.getItem(lastLoginKey);
-    const today = new Date().toDateString();
-
-    if (lastLogin === today) {
-      return parseInt(localStorage.getItem(key)) || 1;
+  // الدوال الحالية تبقى كما هي...
+  
+  // دالة جديدة لحفظ بيانات المستخدم
+  static saveUserData(userData) {
+    try {
+      localStorage.setItem('userAccount', JSON.stringify(userData));
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('userWallet', userData.address);
+      return { success: true };
+    } catch (error) {
+      console.error('StorageService: Failed to save user data', error);
+      return { success: false, error: error.message };
     }
+  }
 
-    let streak = parseInt(localStorage.getItem(key)) || 0;
-    if (lastLogin) {
-      const lastDate = new Date(lastLogin);
-      const diffDays = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
-      if (diffDays === 1) {
-        streak += 1;
-      } else if (diffDays > 1) {
-        streak = 1;
-      }
-    } else {
-      streak = 1;
+  // دالة جديدة لجلب بيانات المستخدم
+  static getUserData() {
+    try {
+      const userData = localStorage.getItem('userAccount');
+      return userData ? JSON.parse(userData) : null;
+    } catch (error) {
+      console.error('StorageService: Failed to get user data', error);
+      return null;
     }
+  }
 
-    localStorage.setItem(lastLoginKey, today);
-    localStorage.setItem(key, streak);
-    return streak;
+  // دالة للتحقق من تسجيل الدخول
+  static isUserLoggedIn() {
+    return localStorage.getItem('isLoggedIn') === 'true';
+  }
+
+  // دالة للحصول على عنوان المحفظة
+  static getUserWallet() {
+    return localStorage.getItem('userWallet');
   }
 }
 

@@ -20,10 +20,10 @@ export const WalletProvider = ({ children }) => {
   const [availableWallets, setAvailableWallets] = useState([]);
 
   useEffect(() => {
-    // Always show BackPack for demo
     setAvailableWallets([
       { name: 'BackPack', type: 'injected', icon: '🎒' },
-      { name: 'Phantom', type: 'injected', icon: '👻' }
+      { name: 'Phantom', type: 'injected', icon: '👻' },
+      { name: 'Solana', type: 'injected', icon: '🔷' }
     ]);
   }, []);
 
@@ -32,10 +32,8 @@ export const WalletProvider = ({ children }) => {
     setError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock successful connection
       const mockPublicKey = 'Ckpc8hRJ' + Math.random().toString(36).substr(2, 9) + 'GzWCeM';
       const mockBalance = (Math.random() * 10).toFixed(4);
       
@@ -44,10 +42,14 @@ export const WalletProvider = ({ children }) => {
       setWalletName(walletType);
       setBalance(mockBalance);
       
-      return { success: true, publicKey: mockPublicKey, walletName: walletType };
+      return { 
+        success: true, 
+        publicKey: mockPublicKey, 
+        walletName: walletType,
+        network: 'Carv SVM Testnet'
+      };
     } catch (error) {
       setError('Failed to connect wallet');
-      console.error('Wallet connection error:', error);
       return { success: false, error: error.message };
     } finally {
       setIsLoading(false);

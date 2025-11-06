@@ -85,78 +85,73 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, walletAddress }) => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleProfileSubmit = async (e) => {
-    e.preventDefault();
+  
+const handleProfileSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!validateForm()) {
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    console.log('📝 Submitting profile data:', formData);
     
-    if (!validateForm()) {
-      return;
+    // حفظ البيانات في localStorage مباشرة
+    const userData = {
+      address: walletAddress,
+      type: 'solana',
+      ...formData,
+      points: 50,
+      streak: 1,
+      level: 1,
+      loginCount: 1,
+      lastLogin: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString()
+    };
+
+    // حفظ المستخدم في localStorage
+    const users = JSON.parse(localStorage.getItem('carvfi_users') || '{}');
+    const userKey = walletAddress?.toLowerCase();
+    users[userKey] = userData;
+    localStorage.setItem('carvfi_users', JSON.stringify(users));
+    localStorage.setItem('carvfi_current_user', JSON.stringify(userData));
+
+    // حفظ النشاط
+    const activities = JSON.parse(localStorage.getItem('carvfi_activities') || '{}');
+    if (!activities[userKey]) {
+      activities[userKey] = [];
+    }
+    activities[userKey].unshift({
+      id: Date.now().toString(),
+      type: 'registration',
+      description: 'New user registered successfully',
+      points: 50,
+      timestamp: new Date().toISOString()
+    });
+    localStorage.setItem('carvfi_activities', JSON.stringify(activities));
+
+    console.log('✅ User data saved successfully');
+
+    // استدعاء onAuthSuccess إذا كان موجوداً
+    if (onAuthSuccess) {
+      onAuthSuccess(userData);
+      console.log('✅ onAuthSuccess called successfully');
     }
 
-    setIsSubmitting(true);
+    // 🚀 الحل النهائي - إغلاق المودال فقط ودع App.jsx يتعامل مع الباقي
+    console.log('🚀 Closing modal and letting parent handle the state...');
+    onClose();
 
-    try {
-      console.log('📝 Submitting profile data:', formData);
-      
-      // حفظ البيانات في localStorage مباشرة
-      const userData = {
-        address: walletAddress,
-        type: 'solana',
-        ...formData,
-        points: 50,
-        streak: 1,
-        level: 1,
-        loginCount: 1,
-        lastLogin: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString()
-      };
-
-      // حفظ المستخدم في localStorage
-      const users = JSON.parse(localStorage.getItem('carvfi_users') || '{}');
-      const userKey = walletAddress?.toLowerCase();
-      users[userKey] = userData;
-      localStorage.setItem('carvfi_users', JSON.stringify(users));
-      localStorage.setItem('carvfi_current_user', JSON.stringify(userData));
-
-      // حفظ النشاط
-      const activities = JSON.parse(localStorage.getItem('carvfi_activities') || '{}');
-      if (!activities[userKey]) {
-        activities[userKey] = [];
-      }
-      activities[userKey].unshift({
-        id: Date.now().toString(),
-        type: 'registration',
-        description: 'New user registered successfully',
-        points: 50,
-        timestamp: new Date().toISOString()
-      });
-      localStorage.setItem('carvfi_activities', JSON.stringify(activities));
-
-      // 🚀 الحل النووي - تأكد من حفظ البيانات
-      console.log('🚀 Setting redirect flags...');
-      localStorage.setItem('carvfi_account_created', 'true');
-      localStorage.setItem('carvfi_redirect', 'true');
-      localStorage.setItem('carvfi_new_user', JSON.stringify(userData));
-
-      console.log('✅ User data saved successfully');
-
-      // استدعاء onAuthSuccess إذا كان موجوداً
-      if (onAuthSuccess) {
-        onAuthSuccess(userData);
-        console.log('✅ onAuthSuccess called successfully');
-      }
-
-      // 🚀 الحل البديل - الانتقال المباشر
-console.log('🚀 Direct redirect...');
-window.location.replace(window.location.origin);
-
-    } catch (error) {
-      console.error('❌ Error creating account:', error);
-      setFormErrors({ submit: 'Failed to create account. Please try again.' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  } catch (error) {
+    console.error('❌ Error creating account:', error);
+    setFormErrors({ submit: 'Failed to create account. Please try again.' });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const generateRandomUsername = () => {
     const randomNum = Math.floor(Math.random() * 10000);

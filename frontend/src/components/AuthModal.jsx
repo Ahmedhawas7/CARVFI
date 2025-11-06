@@ -146,9 +146,9 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, walletAddress }) => {
         console.log('✅ onAuthSuccess called successfully');
       }
 
-      // إعادة تحميل فورية
-      console.log('🚀 Force reloading page...');
-      window.location.reload();
+      // الانتقال إلى الصفحة الرئيسية
+console.log('🚀 Redirecting to home page...');
+window.location.href = window.location.origin + '/';
 
     } catch (error) {
       console.error('❌ Error creating account:', error);

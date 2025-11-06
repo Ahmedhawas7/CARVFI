@@ -1,7 +1,44 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import web3Service from '../services/web3Service';
-import StorageService from '../services/StorageService';
+
+// Mock service for now - we'll replace with real web3Service
+const mockWeb3Service = {
+  getAvailableWallets: () => [
+    { name: 'BackPack', type: 'injected', icon: '🎒' },
+    { name: 'Phantom', type: 'injected', icon: '👻' },
+    { name: 'Solana', type: 'injected', icon: '🔷' }
+  ],
+  
+  connectWallet: async (walletType) => {
+    // Simulate connection delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Mock successful connection
+    return {
+      success: true,
+      publicKey: 'Ckpc8hRJ' + Math.random().toString(36).substr(2, 9) + 'GzWCeM',
+      network: 'Carv SVM Testnet',
+      walletName: walletType
+    };
+  },
+  
+  disconnectWallet: async () => {
+    return true;
+  },
+  
+  getBalance: async () => {
+    return (Math.random() * 10).toFixed(4);
+  },
+  
+  getConnectionStatus: () => ({
+    isConnected: false,
+    publicKey: null,
+    network: 'Carv SVM Testnet',
+    walletName: null,
+    balance: '0'
+  }),
+  
+  isAnyWalletAvailable: () => true
+};
 
 const WalletContext = createContext();
 
@@ -22,48 +59,36 @@ export const WalletProvider = ({ children }) => {
   const [walletName, setWalletName] = useState(null);
   const [availableWallets, setAvailableWallets] = useState([]);
 
-  const navigate = useNavigate();
-
   useEffect(() => {
-    const wallets = web3Service.getAvailableWallets();
+    // Get available wallets on component mount
+    const wallets = mockWeb3Service.getAvailableWallets();
     setAvailableWallets(wallets);
-    checkInitialConnection();
-  }, []);
-
-  const checkInitialConnection = async () => {
-    const current = StorageService.getCurrentUser();
-    if (current) {
+    
+    // Check initial connection status
+    const status = mockWeb3Service.getConnectionStatus();
+    if (status.isConnected) {
       setIsConnected(true);
-      setPublicKey(current.walletAddress);
-      setWalletName(current.walletName || 'Connected Wallet');
-      setBalance(StorageService.getPoints(current.walletAddress) || '0');
-      navigate('/dashboard');
+      setPublicKey(status.publicKey);
+      setWalletName(status.walletName);
+      setBalance(status.balance);
     }
-  };
+  }, []);
 
   const connectWallet = async (walletType = 'backpack') => {
     setIsLoading(true);
     setError(null);
+    
     try {
-      const result = await web3Service.connectWallet(walletType);
+      const result = await mockWeb3Service.connectWallet(walletType);
+      
       if (result.success) {
-        const walletAddress = result.publicKey;
-        const walletUser = {
-          walletAddress,
-          walletName: result.walletName,
-          network: result.network,
-          points: StorageService.getPoints(walletAddress),
-        };
-
-        StorageService.saveUser(walletUser);
-
         setIsConnected(true);
-        setPublicKey(walletAddress);
+        setPublicKey(result.publicKey);
         setWalletName(result.walletName);
-        const accountBalance = await web3Service.getBalance();
+        
+        // Get initial balance
+        const accountBalance = await mockWeb3Service.getBalance();
         setBalance(accountBalance);
-
-        navigate('/dashboard'); // 🔥 التحويل بعد الاتصال الناجح
       }
     } catch (error) {
       setError(error.message);
@@ -75,14 +100,12 @@ export const WalletProvider = ({ children }) => {
 
   const disconnectWallet = async () => {
     try {
-      await web3Service.disconnectWallet();
+      await mockWeb3Service.disconnectWallet();
       setIsConnected(false);
       setPublicKey(null);
       setBalance('0');
       setError(null);
       setWalletName(null);
-      localStorage.removeItem('carvfi_current_user');
-      navigate('/');
     } catch (error) {
       console.error('Error disconnecting wallet:', error);
     }
@@ -91,7 +114,7 @@ export const WalletProvider = ({ children }) => {
   const refreshBalance = async () => {
     if (isConnected && publicKey) {
       try {
-        const accountBalance = await web3Service.getBalance();
+        const accountBalance = await mockWeb3Service.getBalance();
         setBalance(accountBalance);
       } catch (error) {
         console.error('Failed to refresh balance:', error);
@@ -110,7 +133,7 @@ export const WalletProvider = ({ children }) => {
     connectWallet,
     disconnectWallet,
     refreshBalance,
-    isAnyWalletAvailable: web3Service.isAnyWalletAvailable()
+    isAnyWalletAvailable: mockWeb3Service.isAnyWalletAvailable()
   };
 
   return (

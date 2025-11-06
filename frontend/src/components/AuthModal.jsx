@@ -1,5 +1,5 @@
-// frontend/src/components/AuthModal.jsx
-import React, { useState } from 'react';
+// src/components/AuthModal.jsx
+import React, { useState, useEffect } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 
 const AuthModal = ({ isOpen, onClose }) => {
@@ -11,8 +11,17 @@ const AuthModal = ({ isOpen, onClose }) => {
     error, 
     connectWallet, 
     disconnectWallet,
-    isWalletAvailable 
+    availableWallets,
+    walletName
   } = useWallet();
+
+  const [selectedWallet, setSelectedWallet] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedWallet(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -20,8 +29,14 @@ const AuthModal = ({ isOpen, onClose }) => {
     return `${pubkey.slice(0, 6)}...${pubkey.slice(-4)}`;
   };
 
+  const handleWalletSelect = (wallet) => {
+    setSelectedWallet(wallet);
+  };
+
   const handleConnect = async () => {
-    await connectWallet();
+    if (selectedWallet) {
+      await connectWallet(selectedWallet.type === 'walletconnect' ? 'walletconnect' : selectedWallet.name);
+    }
   };
 
   const handleDisconnect = () => {
@@ -50,73 +65,107 @@ const AuthModal = ({ isOpen, onClose }) => {
           {!isConnected ? (
             // Connect Wallet State
             <div>
-              {!isWalletAvailable ? (
+              {availableWallets.length === 0 ? (
                 <div className="text-center space-y-4">
                   <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
                     <span className="text-2xl">⚠️</span>
                   </div>
-                  <p className="text-red-600 text-lg font-semibold">No Wallet Found</p>
+                  <p className="text-red-600 text-lg font-semibold">No Wallets Found</p>
                   <p className="text-gray-600 mb-4">
-                    Please install a Solana wallet like BackPack, Phantom, or Solflare to use CARVFi
+                    Please install a Solana wallet like BackPack or use WalletConnect
                   </p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-3">
                     <a 
                       href="https://www.backpack.app/" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors text-center"
+                      className="bg-purple-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors text-center"
                     >
-                      BackPack
+                      Download BackPack
                     </a>
                     <a 
                       href="https://phantom.app/" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-center"
+                      className="bg-indigo-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-center"
                     >
-                      Phantom
+                      Download Phantom
                     </a>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border border-purple-200">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                        <span className="text-xl">🎒</span>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900 text-lg">Solana Wallet</h3>
-                        <p className="text-gray-600">
-                          Connect your Solana wallet for Carv SVM
-                        </p>
-                      </div>
+                  {/* Wallet Selection */}
+                  {!selectedWallet ? (
+                    <div className="space-y-3">
+                      <h3 className="font-semibold text-gray-900 mb-4">Choose a wallet:</h3>
+                      {availableWallets.map((wallet, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleWalletSelect(wallet)}
+                          className="w-full flex items-center space-x-4 p-4 border border-gray-200 rounded-xl hover:border-purple-300 hover:bg-purple-50 transition-colors"
+                        >
+                          <span className="text-2xl">{wallet.icon}</span>
+                          <div className="flex-1 text-left">
+                            <div className="font-semibold text-gray-900">{wallet.name}</div>
+                            {wallet.description && (
+                              <div className="text-sm text-gray-600">{wallet.description}</div>
+                            )}
+                          </div>
+                          <span className="text-gray-400">→</span>
+                        </button>
+                      ))}
                     </div>
-                  </div>
+                  ) : (
+                    // Selected Wallet Confirmation
+                    <div className="space-y-6">
+                      <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border border-purple-200">
+                        <div className="flex items-center space-x-4">
+                          <span className="text-3xl">{selectedWallet.icon}</span>
+                          <div>
+                            <h3 className="font-bold text-gray-900 text-lg">{selectedWallet.name}</h3>
+                            <p className="text-gray-600">
+                              {selectedWallet.type === 'walletconnect' 
+                                ? 'Scan QR code with your wallet' 
+                                : 'Click connect to continue'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
 
-                  {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-                      <div className="flex items-center">
-                        <span className="text-lg mr-2">❌</span>
-                        <span className="font-medium">{error}</span>
+                      {error && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+                          <div className="flex items-center">
+                            <span className="text-lg mr-2">❌</span>
+                            <span className="font-medium">{error}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={() => setSelectedWallet(null)}
+                          className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-xl font-medium hover:bg-gray-300 transition-colors"
+                        >
+                          Back
+                        </button>
+                        <button
+                          onClick={handleConnect}
+                          disabled={isLoading}
+                          className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all"
+                        >
+                          {isLoading ? (
+                            <div className="flex items-center justify-center">
+                              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                              Connecting...
+                            </div>
+                          ) : (
+                            'Connect'
+                          )}
+                        </button>
                       </div>
                     </div>
                   )}
-
-                  <button
-                    onClick={handleConnect}
-                    disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-semibold text-lg hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all"
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center justify-center">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                        Connecting...
-                      </div>
-                    ) : (
-                      'Connect Wallet'
-                    )}
-                  </button>
                 </div>
               )}
             </div>
@@ -125,7 +174,7 @@ const AuthModal = ({ isOpen, onClose }) => {
             <div className="space-y-6">
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="font-bold text-green-800 text-lg">Connected Successfully</span>
+                  <span className="font-bold text-green-800 text-lg">Connected to {walletName}</span>
                   <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
                 </div>
                 <div className="bg-white rounded-lg p-3">

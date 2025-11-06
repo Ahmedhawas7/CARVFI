@@ -10,25 +10,35 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, walletAddress }) => {
   } = useWallet();
   
   const [activeTab, setActiveTab] = useState('connect');
-  const [username, setUsername] = useState('');
-  const [profileData, setProfileData] = useState({
-    displayName: '',
-    bio: '',
+  const [formData, setFormData] = useState({
+    // البيانات الأساسية
+    username: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    
+    // بيانات Carv
+    carvPlayUsername: '',
+    carvUID: '',
+    
+    // وسائل التواصل الاجتماعي
+    twitter: '',
+    telegram: '',
+    
+    // صورة شخصية
     avatar: ''
   });
 
-  // إذا كان فيه walletAddress يبقي المستخدم متصل بالمحفظة وبيسجل بياناته الإضافية
-  const isProfileCompletion = !!walletAddress;
+  const [formErrors, setFormErrors] = useState({});
 
   // توليد username تلقائي عند فتح المودال
   useEffect(() => {
-    if (isProfileCompletion && isOpen && !username) {
+    if (walletAddress && isOpen && !formData.username) {
       const randomNum = Math.floor(Math.random() * 10000);
-      const newUsername = `user_${randomNum}`;
-      setUsername(newUsername);
-      console.log('🎲 Auto-generated username:', newUsername);
+      const newUsername = `user${randomNum}`;
+      setFormData(prev => ({ ...prev, username: newUsername }));
     }
-  }, [isProfileCompletion, isOpen, username]);
+  }, [walletAddress, isOpen, formData.username]);
 
   if (!isOpen) return null;
 
@@ -38,7 +48,6 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, walletAddress }) => {
       const result = await connectWallet(walletType);
       if (result.success) {
         console.log('✅ Wallet connected successfully');
-        // نجاح الربط - نغلق المودال ونترك App.jsx يتعامل مع الباقي
         onClose();
       }
     } catch (error) {
@@ -46,19 +55,61 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, walletAddress }) => {
     }
   };
 
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // مسح الخطأ عندما يبدأ المستخدم الكتابة
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+
+    // التحقق من اسم المستخدم
+    if (!formData.username) {
+      errors.username = 'Username is required';
+    } else if (!/^[a-z0-9]+$/.test(formData.username)) {
+      errors.username = 'Username must contain only lowercase letters and numbers';
+    }
+
+    // التحقق من الاسم الأول
+    if (!formData.firstName) {
+      errors.firstName = 'First name is required';
+    }
+
+    // التحقق من الاسم الأخير
+    if (!formData.lastName) {
+      errors.lastName = 'Last name is required';
+    }
+
+    // التحقق من البريد الإلكتروني
+    if (!formData.email) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleProfileSubmit = (e) => {
     e.preventDefault();
     
-    console.log('📝 Submitting profile data:', { username, profileData });
+    if (!validateForm()) {
+      return;
+    }
+
+    console.log('📝 Submitting profile data:', formData);
     console.log('🎯 Calling onAuthSuccess with wallet:', walletAddress);
     
     if (onAuthSuccess) {
       onAuthSuccess({
         address: walletAddress,
         type: 'solana',
-        username: username,
-        displayName: profileData.displayName,
-        bio: profileData.bio
+        ...formData
       });
       console.log('✅ onAuthSuccess called successfully');
     } else {
@@ -70,19 +121,18 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, walletAddress }) => {
 
   const generateRandomUsername = () => {
     const randomNum = Math.floor(Math.random() * 10000);
-    const newUsername = `user_${randomNum}`;
-    setUsername(newUsername);
-    console.log('🎲 Generated random username:', newUsername);
+    const newUsername = `user${randomNum}`;
+    setFormData(prev => ({ ...prev, username: newUsername }));
   };
 
   // مودال إكمال الملف الشخصي
-  if (isProfileCompletion) {
+  if (walletAddress) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-800">Complete Your Profile</h2>
+            <h2 className="text-xl font-bold text-gray-800">Create Your Account</h2>
             <button 
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
@@ -103,59 +153,195 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, walletAddress }) => {
 
           {/* Profile Form */}
           <form onSubmit={handleProfileSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Username *
-              </label>
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Choose a username"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={generateRandomUsername}
-                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
-                >
-                  Random
-                </button>
+            {/* البيانات الأساسية */}
+            <div className="border-b pb-4">
+              <h3 className="font-semibold text-gray-700 mb-3">Basic Information</h3>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Username *
+                  </label>
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={formData.username}
+                      onChange={(e) => handleInputChange('username', e.target.value.toLowerCase())}
+                      placeholder="username123"
+                      className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.username ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={generateRandomUsername}
+                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
+                    >
+                      Random
+                    </button>
+                  </div>
+                  {formErrors.username && (
+                    <p className="text-red-500 text-xs mt-1">{formErrors.username}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">Lowercase letters and numbers only</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      First Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.firstName}
+                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      placeholder="John"
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.firstName ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      required
+                    />
+                    {formErrors.firstName && (
+                      <p className="text-red-500 text-xs mt-1">{formErrors.firstName}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.lastName}
+                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      placeholder="Doe"
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        formErrors.lastName ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      required
+                    />
+                    {formErrors.lastName && (
+                      <p className="text-red-500 text-xs mt-1">{formErrors.lastName}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="your@email.com"
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      formErrors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    required
+                  />
+                  {formErrors.email && (
+                    <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>
+                  )}
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Display Name
-              </label>
-              <input
-                type="text"
-                value={profileData.displayName}
-                onChange={(e) => setProfileData(prev => ({
-                  ...prev,
-                  displayName: e.target.value
-                }))}
-                placeholder="Your display name (optional)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            {/* Carv Information */}
+            <div className="border-b pb-4">
+              <h3 className="font-semibold text-gray-700 mb-3">Carv Information (Optional)</h3>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Carv Play Username
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.carvPlayUsername}
+                    onChange={(e) => handleInputChange('carvPlayUsername', e.target.value)}
+                    placeholder="Your Carv Play username"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Carv UID
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.carvUID}
+                    onChange={(e) => handleInputChange('carvUID', e.target.value)}
+                    placeholder="Your Carv UID"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
             </div>
 
+            {/* Social Media */}
+            <div className="border-b pb-4">
+              <h3 className="font-semibold text-gray-700 mb-3">Social Media (Optional)</h3>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Twitter
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.twitter}
+                    onChange={(e) => handleInputChange('twitter', e.target.value)}
+                    placeholder="@username"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Telegram
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.telegram}
+                    onChange={(e) => handleInputChange('telegram', e.target.value)}
+                    placeholder="@username"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Profile Picture */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Bio
-              </label>
-              <textarea
-                value={profileData.bio}
-                onChange={(e) => setProfileData(prev => ({
-                  ...prev,
-                  bio: e.target.value
-                }))}
-                placeholder="Tell us about yourself..."
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <h3 className="font-semibold text-gray-700 mb-3">Profile Picture (Optional)</h3>
+              
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
+                  {formData.avatar ? (
+                    <img 
+                      src={formData.avatar} 
+                      alt="Profile" 
+                      className="w-16 h-16 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-gray-500 text-2xl">👤</span>
+                  )}
+                </div>
+                
+                <div className="flex-1">
+                  <input
+                    type="url"
+                    value={formData.avatar}
+                    onChange={(e) => handleInputChange('avatar', e.target.value)}
+                    placeholder="Paste image URL"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Paste a direct image URL</p>
+                </div>
+              </div>
             </div>
 
             {error && (
@@ -164,7 +350,7 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, walletAddress }) => {
               </div>
             )}
 
-            <div className="flex space-x-3 pt-2">
+            <div className="flex space-x-3 pt-4">
               <button
                 type="button"
                 onClick={onClose}
@@ -174,10 +360,9 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, walletAddress }) => {
               </button>
               <button
                 type="submit"
-                disabled={!username}
-                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
               >
-                Complete Registration
+                Create Account
               </button>
             </div>
           </form>
@@ -252,14 +437,6 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, walletAddress }) => {
                     className="inline-block bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700"
                   >
                     Install BackPack
-                  </a>
-                  <a 
-                    href="https://phantom.app/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 ml-2"
-                  >
-                    Install Phantom
                   </a>
                 </div>
               </div>

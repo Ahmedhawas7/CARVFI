@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-const RewardsDashboard = ({ user, storageService }) => {
+const RewardsDashboard = ({ user }) => {
   const [userData, setUserData] = useState({
     points: 0,
     streak: 0,
@@ -86,6 +87,8 @@ const RewardsDashboard = ({ user, storageService }) => {
     }
   ]);
 
+  const navigate = useNavigate();
+
   // Calculate task statistics
   const completedTasks = dailyTasks.filter(task => task.completed).length;
   const totalTasks = dailyTasks.length;
@@ -96,11 +99,15 @@ const RewardsDashboard = ({ user, storageService }) => {
       loadUserData();
       loadActivities();
       checkDailyLogin();
+    } else {
+      // إذا لم يكن هناك مستخدم، ارجع للصفحة الرئيسية
+      navigate('/');
     }
-  }, [user]);
+  }, [user, navigate]);
 
   const loadUserData = () => {
-    const savedUser = storageService.getUser(user.walletAddress);
+    // استخدام الـ StorageService الموجود في App.jsx
+    const savedUser = JSON.parse(localStorage.getItem('carvfi_current_user') || 'null');
     if (savedUser) {
       setUserData({
         points: savedUser.points || 0,
@@ -112,8 +119,15 @@ const RewardsDashboard = ({ user, storageService }) => {
   };
 
   const loadActivities = () => {
-    const activities = storageService.getActivities(user.walletAddress);
-    setUserActivities(activities);
+    try {
+      const activities = JSON.parse(localStorage.getItem('carvfi_activities') || '{}');
+      const userKey = user?.walletAddress?.toLowerCase();
+      if (activities[userKey]) {
+        setUserActivities(activities[userKey]);
+      }
+    } catch (error) {
+      console.error('Error loading activities:', error);
+    }
   };
 
   const checkDailyLogin = () => {
@@ -134,9 +148,24 @@ const RewardsDashboard = ({ user, storageService }) => {
         )
       );
 
-      const newPoints = storageService.updatePoints(user.walletAddress, task.points);
+      // استخدام نفس نظام تحديث النقاط الموجود في App.jsx
+      const users = JSON.parse(localStorage.getItem('carvfi_users') || '{}');
+      const userKey = user.walletAddress?.toLowerCase();
       
-      storageService.saveActivity(user.walletAddress, {
+      if (users[userKey]) {
+        users[userKey].points = (users[userKey].points || 0) + task.points;
+        users[userKey].lastUpdated = new Date().toISOString();
+        localStorage.setItem('carvfi_users', JSON.stringify(users));
+        
+        const currentUser = JSON.parse(localStorage.getItem('carvfi_current_user') || 'null');
+        if (currentUser && currentUser.walletAddress?.toLowerCase() === userKey) {
+          currentUser.points = users[userKey].points;
+          localStorage.setItem('carvfi_current_user', JSON.stringify(currentUser));
+        }
+      }
+
+      // حفظ النشاط
+      saveActivity({
         type: task.type,
         description: `Completed: ${task.title}`,
         points: task.points
@@ -144,17 +173,52 @@ const RewardsDashboard = ({ user, storageService }) => {
 
       setUserData(prev => ({
         ...prev,
-        points: newPoints
+        points: (prev.points || 0) + task.points
       }));
 
       loadActivities();
 
       if (task.type === 'login') {
-        const userStreak = storageService.updateStreak(user.walletAddress);
+        updateStreak();
+      }
+    }
+  };
+
+  const updateStreak = () => {
+    const users = JSON.parse(localStorage.getItem('carvfi_users') || '{}');
+    const userKey = user?.walletAddress?.toLowerCase();
+    
+    if (users[userKey]) {
+      const today = new Date().toDateString();
+      const lastLogin = users[userKey].lastLogin ? new Date(users[userKey].lastLogin).toDateString() : null;
+      
+      if (lastLogin !== today) {
+        users[userKey].streak = (users[userKey].streak || 0) + 1;
+        users[userKey].lastLogin = new Date().toISOString();
+        users[userKey].loginCount = (users[userKey].loginCount || 0) + 1;
+        users[userKey].lastUpdated = new Date().toISOString();
+        localStorage.setItem('carvfi_users', JSON.stringify(users));
+        
+        const currentUser = JSON.parse(localStorage.getItem('carvfi_current_user') || 'null');
+        if (currentUser && currentUser.walletAddress?.toLowerCase() === userKey) {
+          currentUser.streak = users[userKey].streak;
+          currentUser.lastLogin = users[userKey].lastLogin;
+          currentUser.loginCount = users[userKey].loginCount;
+          localStorage.setItem('carvfi_current_user', JSON.stringify(currentUser));
+        }
+
+        const userStreak = users[userKey].streak;
         if (userStreak % 7 === 0) {
           const bonusPoints = 100;
-          storageService.updatePoints(user.walletAddress, bonusPoints);
-          storageService.saveActivity(user.walletAddress, {
+          users[userKey].points = (users[userKey].points || 0) + bonusPoints;
+          localStorage.setItem('carvfi_users', JSON.stringify(users));
+          
+          if (currentUser && currentUser.walletAddress?.toLowerCase() === userKey) {
+            currentUser.points = users[userKey].points;
+            localStorage.setItem('carvfi_current_user', JSON.stringify(currentUser));
+          }
+          
+          saveActivity({
             type: 'bonus',
             description: `Weekly streak bonus! ${userStreak} days`,
             points: bonusPoints
@@ -162,13 +226,31 @@ const RewardsDashboard = ({ user, storageService }) => {
           
           setUserData(prev => ({
             ...prev,
-            points: prev.points + bonusPoints,
+            points: (prev.points || 0) + bonusPoints,
             streak: userStreak
           }));
           loadActivities();
         }
       }
     }
+  };
+
+  const saveActivity = (activity) => {
+    const activities = JSON.parse(localStorage.getItem('carvfi_activities') || '{}');
+    const userKey = user?.walletAddress?.toLowerCase();
+    
+    if (!activities[userKey]) {
+      activities[userKey] = [];
+    }
+    
+    activities[userKey].unshift({
+      id: Date.now().toString(),
+      ...activity,
+      timestamp: new Date().toISOString()
+    });
+    
+    activities[userKey] = activities[userKey].slice(0, 50);
+    localStorage.setItem('carvfi_activities', JSON.stringify(activities));
   };
 
   const claimDailyLogin = () => {
@@ -219,8 +301,42 @@ const RewardsDashboard = ({ user, storageService }) => {
     }
   };
 
+  const handleBackToDashboard = () => {
+    navigate('/');
+  };
+
   return (
     <div className="main-content">
+      {/* Header Section */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div>
+          <h1 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem', fontSize: '2rem', fontWeight: 'bold' }}>
+            Rewards Dashboard 🎯
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>
+            Complete tasks and earn amazing rewards
+          </p>
+        </div>
+        <button
+          onClick={handleBackToDashboard}
+          style={{
+            padding: '0.75rem 1.5rem',
+            background: 'var(--primary)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '10px',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseOver={(e) => e.target.style.background = 'var(--primary-dark)'}
+          onMouseOut={(e) => e.target.style.background = 'var(--primary)'}
+        >
+          ← Back to Dashboard
+        </button>
+      </div>
+
       {/* Stats Overview */}
       <div className="grid" style={{ marginBottom: '2rem' }}>
         <div className="card">
@@ -474,8 +590,6 @@ const RewardsDashboard = ({ user, storageService }) => {
             )}
           </div>
         </div>
-
-        {/* باقي المكونات بنفس النمط */}
       </div>
     </div>
   );

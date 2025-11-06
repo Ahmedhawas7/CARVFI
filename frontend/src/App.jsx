@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { WalletProvider, useWallet } from './contexts/WalletContext';
 import AuthModal from './components/AuthModal';
 import RewardsDashboard from './components/RewardsDashboard';
@@ -206,11 +206,8 @@ const AppContent = () => {
     
     console.log('✅ User state updated and modal closed');
     
-    // الانتقال إلى Dashboard بعد تأخير بسيط
-    setTimeout(() => {
-      navigate('/');
-      console.log('🚀 Navigated to dashboard');
-    }, 100);
+    // الانتقال إلى Dashboard
+    navigate('/');
   };
 
   const handleConnectWallet = async () => {
@@ -574,11 +571,9 @@ const DashboardView = ({ user, balance, walletName, publicKey }) => {
 
 function App() {
   return (
-    <Router>
-      <WalletProvider>
-        <AppContent />
-      </WalletProvider>
-    </Router>
+    <WalletProvider>
+      <AppContent />
+    </WalletProvider>
   );
 }
 

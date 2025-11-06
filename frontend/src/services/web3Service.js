@@ -1,4 +1,4 @@
-// frontend/src/services/web3Service.js
+// src/services/web3Service.js
 
 // Carv SVM Testnet configuration
 export const CARV_SVM_CONFIG = {
@@ -15,12 +15,6 @@ export class CarvSolanaService {
     this.wallet = null;
     this.publicKey = null;
     this.isConnected = false;
-    this.setupConnection();
-  }
-
-  setupConnection() {
-    // We'll setup connection when wallet connects
-    this.connection = null;
   }
 
   // Check if any Solana wallet is available
@@ -65,10 +59,8 @@ export class CarvSolanaService {
       this.isConnected = true;
 
       // Setup connection with Carv SVM RPC
-      this.connection = new (await import('@solana/web3.js')).Connection(
-        CARV_SVM_CONFIG.url, 
-        'confirmed'
-      );
+      const { Connection } = await import('@solana/web3.js');
+      this.connection = new Connection(CARV_SVM_CONFIG.url, 'confirmed');
 
       console.log('Connected to wallet:', this.publicKey.toString());
 

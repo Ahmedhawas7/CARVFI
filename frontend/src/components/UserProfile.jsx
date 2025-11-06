@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import StorageService from '../services/StorageService';
 
 const UserProfile = ({ user }) => {
   const [profile, setProfile] = useState({
@@ -48,34 +49,26 @@ const UserProfile = ({ user }) => {
     setIsLoading(true);
     
     try {
-      // حفظ البيانات في localStorage
+      // استخدام StorageService بدلاً من localStorage المباشر
       const updatedUser = {
         ...user,
         ...profile,
         lastUpdated: new Date().toISOString()
       };
 
-      const users = JSON.parse(localStorage.getItem('carvfi_users') || '{}');
-      const userKey = user.walletAddress?.toLowerCase();
-      users[userKey] = updatedUser;
-      localStorage.setItem('carvfi_users', JSON.stringify(users));
-      localStorage.setItem('carvfi_current_user', JSON.stringify(updatedUser));
+      // حفظ عبر StorageService
+      StorageService.saveUser(updatedUser);
 
       // حفظ النشاط
-      const activities = JSON.parse(localStorage.getItem('carvfi_activities') || '{}');
-      if (!activities[userKey]) {
-        activities[userKey] = [];
-      }
-      activities[userKey].unshift({
-        id: Date.now().toString(),
+      StorageService.saveActivity(user.walletAddress, {
         type: 'profile_update',
         description: 'Profile updated successfully',
-        points: 5,
-        timestamp: new Date().toISOString()
+        points: 5
       });
-      localStorage.setItem('carvfi_activities', JSON.stringify(activities));
 
-      console.log('✅ Profile data saved successfully');
+      StorageService.updatePoints(user.walletAddress, 5);
+
+      console.log('✅ Profile data saved via StorageService');
       setSaveStatus('success');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (error) {

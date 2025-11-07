@@ -19,7 +19,8 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, walletAddress }) => {
     carvUID: '',
     twitter: '',
     telegram: '',
-    avatar: ''
+    avatar: '',
+    bio: 'Ready to explore the world of Web3 and Social Finance! 🚀'
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -97,8 +98,6 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, walletAddress }) => {
     try {
       console.log('📝 Submitting profile data:', formData);
       
-      // 🚀 الحل المبسط - إرسال البيانات فقط إلى onAuthSuccess
-      // ودع App.jsx يتولى حفظ البيانات والانتقال
       if (onAuthSuccess) {
         onAuthSuccess(formData);
         console.log('✅ onAuthSuccess called successfully');
@@ -120,367 +119,411 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess, walletAddress }) => {
     setFormData(prev => ({ ...prev, username: newUsername }));
   };
 
-  // مودال إكمال الملف الشخصي
+  const handleImageUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        handleInputChange('avatar', e.target?.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // مودال إكمال الملف الشخصي (التصميم الجديد)
   if (walletAddress) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-gray-700 shadow-2xl">
+          
           {/* Header */}
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-800">Create Your Account</h2>
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-              disabled={isSubmitting}
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Wallet Info */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-            <p className="text-sm text-green-800 font-medium">
-              ✅ Wallet Connected
-            </p>
-            <p className="text-xs text-green-600 mt-1 font-mono">
-              {walletAddress.slice(0, 10)}...{walletAddress.slice(-8)}
-            </p>
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-2xl">
+                🌐
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-2">Join CARVFi Community 🚀</h2>
+            <p className="text-gray-400">Complete your profile to start your Web3 journey</p>
+            
+            {/* Wallet Info */}
+            <div className="bg-green-900/20 border border-green-500/30 rounded-xl p-4 mt-4 max-w-md mx-auto">
+              <div className="flex items-center justify-center gap-2 text-green-400 mb-2">
+                <span>✅</span>
+                <span className="font-semibold">Wallet Connected</span>
+              </div>
+              <p className="text-green-300 text-sm font-mono">
+                {walletAddress.slice(0, 10)}...{walletAddress.slice(-8)}
+              </p>
+            </div>
           </div>
 
           {/* Profile Form */}
-          <form onSubmit={handleProfileSubmit} className="space-y-4">
-            {/* Basic Information */}
-            <div className="border-b pb-4">
-              <h3 className="font-semibold text-gray-700 mb-3">Basic Information</h3>
-              
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Username *
-                  </label>
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={formData.username}
-                      onChange={(e) => handleInputChange('username', e.target.value.toLowerCase())}
-                      placeholder="username123"
-                      className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.username ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      required
-                      disabled={isSubmitting}
-                    />
-                    <button
-                      type="button"
-                      onClick={generateRandomUsername}
-                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm disabled:opacity-50"
-                      disabled={isSubmitting}
-                    >
-                      Random
-                    </button>
-                  </div>
-                  {formErrors.username && (
-                    <p className="text-red-500 text-xs mt-1">{formErrors.username}</p>
-                  )}
-                  <p className="text-xs text-gray-500 mt-1">Lowercase letters and numbers only</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      First Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
-                      placeholder="John"
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.firstName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      required
-                      disabled={isSubmitting}
-                    />
-                    {formErrors.firstName && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.firstName}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Last Name *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.lastName}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
-                      placeholder="Doe"
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        formErrors.lastName ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      required
-                      disabled={isSubmitting}
-                    />
-                    {formErrors.lastName && (
-                      <p className="text-red-500 text-xs mt-1">{formErrors.lastName}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="your@email.com"
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      formErrors.email ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    required
-                    disabled={isSubmitting}
-                  />
-                  {formErrors.email && (
-                    <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Carv Information */}
-            <div className="border-b pb-4">
-              <h3 className="font-semibold text-gray-700 mb-3">Carv Information (Optional)</h3>
-              
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Carv Play Username
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.carvPlayUsername}
-                    onChange={(e) => handleInputChange('carvPlayUsername', e.target.value)}
-                    placeholder="Your Carv Play username"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isSubmitting}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Carv UID
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.carvUID}
-                    onChange={(e) => handleInputChange('carvUID', e.target.value)}
-                    placeholder="Your Carv UID"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isSubmitting}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Social Media */}
-            <div className="border-b pb-4">
-              <h3 className="font-semibold text-gray-700 mb-3">Social Media (Optional)</h3>
-              
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Twitter
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.twitter}
-                    onChange={(e) => handleInputChange('twitter', e.target.value)}
-                    placeholder="@username"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isSubmitting}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Telegram
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.telegram}
-                    onChange={(e) => handleInputChange('telegram', e.target.value)}
-                    placeholder="@username"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isSubmitting}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Profile Picture */}
-            <div>
-              <h3 className="font-semibold text-gray-700 mb-3">Profile Picture (Optional)</h3>
-              
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
+          <form onSubmit={handleProfileSubmit} className="space-y-8">
+            
+            {/* Profile Picture Section */}
+            <div className="text-center">
+              <div className="relative inline-block">
+                <div className="w-32 h-32 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-4xl text-white mb-4 mx-auto border-4 border-white/20 shadow-2xl overflow-hidden">
                   {formData.avatar ? (
                     <img 
                       src={formData.avatar} 
                       alt="Profile" 
-                      className="w-16 h-16 rounded-full object-cover"
+                      className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-gray-500 text-2xl">👤</span>
+                    <span>👤</span>
                   )}
                 </div>
                 
-                <div className="flex-1">
+                <label 
+                  htmlFor="avatar-upload"
+                  className="absolute bottom-4 right-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white p-3 rounded-full cursor-pointer transition-all duration-300 hover:scale-110 shadow-lg border-2 border-white/30"
+                >
+                  📷
                   <input
-                    type="url"
-                    value={formData.avatar}
-                    onChange={(e) => handleInputChange('avatar', e.target.value)}
-                    placeholder="Paste image URL"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              <p className="text-gray-400 text-sm">Click the camera to add a profile picture</p>
+            </div>
+
+            {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Username */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-white mb-3">
+                  Username *
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) => handleInputChange('username', e.target.value.toLowerCase())}
+                    placeholder="Choose a unique username"
+                    className={`flex-1 px-4 py-3 bg-gray-800 border-2 rounded-xl focus:outline-none focus:border-purple-500 text-white placeholder-gray-500 transition-all ${
+                      formErrors.username ? 'border-red-500' : 'border-gray-600'
+                    }`}
+                    required
                     disabled={isSubmitting}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Paste a direct image URL</p>
+                  <button
+                    type="button"
+                    onClick={generateRandomUsername}
+                    className="px-6 py-3 bg-gray-700 text-white rounded-xl hover:bg-gray-600 transition-all disabled:opacity-50 font-semibold"
+                    disabled={isSubmitting}
+                  >
+                    Random
+                  </button>
                 </div>
+                {formErrors.username && (
+                  <p className="text-red-400 text-sm mt-2">{formErrors.username}</p>
+                )}
+                <p className="text-gray-400 text-xs mt-2">Lowercase letters and numbers only</p>
+              </div>
+
+              {/* First Name & Last Name */}
+              <div>
+                <label className="block text-sm font-semibold text-white mb-3">
+                  First Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  placeholder="Your first name"
+                  className={`w-full px-4 py-3 bg-gray-800 border-2 rounded-xl focus:outline-none focus:border-purple-500 text-white placeholder-gray-500 transition-all ${
+                    formErrors.firstName ? 'border-red-500' : 'border-gray-600'
+                  }`}
+                  required
+                  disabled={isSubmitting}
+                />
+                {formErrors.firstName && (
+                  <p className="text-red-400 text-sm mt-2">{formErrors.firstName}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white mb-3">
+                  Last Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
+                  placeholder="Your last name"
+                  className={`w-full px-4 py-3 bg-gray-800 border-2 rounded-xl focus:outline-none focus:border-purple-500 text-white placeholder-gray-500 transition-all ${
+                    formErrors.lastName ? 'border-red-500' : 'border-gray-600'
+                  }`}
+                  required
+                  disabled={isSubmitting}
+                />
+                {formErrors.lastName && (
+                  <p className="text-red-400 text-sm mt-2">{formErrors.lastName}</p>
+                )}
+              </div>
+
+              {/* Email */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-white mb-3">
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  placeholder="your@email.com"
+                  className={`w-full px-4 py-3 bg-gray-800 border-2 rounded-xl focus:outline-none focus:border-purple-500 text-white placeholder-gray-500 transition-all ${
+                    formErrors.email ? 'border-red-500' : 'border-gray-600'
+                  }`}
+                  required
+                  disabled={isSubmitting}
+                />
+                {formErrors.email && (
+                  <p className="text-red-400 text-sm mt-2">{formErrors.email}</p>
+                )}
+              </div>
+
+            </div>
+
+            {/* Bio Section */}
+            <div>
+              <label className="block text-sm font-semibold text-white mb-3">
+                Bio
+              </label>
+              <textarea
+                value={formData.bio}
+                onChange={(e) => handleInputChange('bio', e.target.value)}
+                rows={3}
+                placeholder="Tell us about yourself and your Web3 journey..."
+                className="w-full px-4 py-3 bg-gray-800 border-2 border-gray-600 rounded-xl focus:outline-none focus:border-purple-500 text-white placeholder-gray-500 transition-all resize-none"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            {/* Carv Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-white mb-3">
+                  🎮 Carv Play Username
+                </label>
+                <input
+                  type="text"
+                  value={formData.carvPlayUsername}
+                  onChange={(e) => handleInputChange('carvPlayUsername', e.target.value)}
+                  placeholder="Your gaming username"
+                  className="w-full px-4 py-3 bg-gray-800 border-2 border-gray-600 rounded-xl focus:outline-none focus:border-purple-500 text-white placeholder-gray-500 transition-all"
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white mb-3">
+                  🔢 Carv UID
+                </label>
+                <input
+                  type="text"
+                  value={formData.carvUID}
+                  onChange={(e) => handleInputChange('carvUID', e.target.value)}
+                  placeholder="Your unique Carv ID"
+                  className="w-full px-4 py-3 bg-gray-800 border-2 border-gray-600 rounded-xl focus:outline-none focus:border-purple-500 text-white placeholder-gray-500 transition-all"
+                  disabled={isSubmitting}
+                />
               </div>
             </div>
 
+            {/* Social Media */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-white mb-3">
+                  🐦 Twitter
+                </label>
+                <input
+                  type="text"
+                  value={formData.twitter}
+                  onChange={(e) => handleInputChange('twitter', e.target.value)}
+                  placeholder="@username"
+                  className="w-full px-4 py-3 bg-gray-800 border-2 border-gray-600 rounded-xl focus:outline-none focus:border-purple-500 text-white placeholder-gray-500 transition-all"
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white mb-3">
+                  📱 Telegram
+                </label>
+                <input
+                  type="text"
+                  value={formData.telegram}
+                  onChange={(e) => handleInputChange('telegram', e.target.value)}
+                  placeholder="@username"
+                  className="w-full px-4 py-3 bg-gray-800 border-2 border-gray-600 rounded-xl focus:outline-none focus:border-purple-500 text-white placeholder-gray-500 transition-all"
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+
+            {/* Avatar URL */}
+            <div>
+              <label className="block text-sm font-semibold text-white mb-3">
+                🌐 Profile Picture URL
+              </label>
+              <input
+                type="url"
+                value={formData.avatar}
+                onChange={(e) => handleInputChange('avatar', e.target.value)}
+                placeholder="Paste direct image URL for your profile"
+                className="w-full px-4 py-3 bg-gray-800 border-2 border-gray-600 rounded-xl focus:outline-none focus:border-purple-500 text-white placeholder-gray-500 transition-all"
+                disabled={isSubmitting}
+              />
+              <p className="text-gray-400 text-xs mt-2">Paste a direct image URL for your profile picture</p>
+            </div>
+
+            {/* Error Messages */}
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg">
+              <div className="bg-red-900/20 border border-red-500/30 text-red-400 p-4 rounded-xl">
                 <p className="text-sm">{error}</p>
               </div>
             )}
 
             {formErrors.submit && (
-              <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg">
+              <div className="bg-red-900/20 border border-red-500/30 text-red-400 p-4 rounded-xl">
                 <p className="text-sm">{formErrors.submit}</p>
               </div>
             )}
 
-            <div className="flex space-x-3 pt-4">
+            {/* Action Buttons */}
+            <div className="flex gap-4 pt-6 border-t border-gray-700">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors disabled:opacity-50"
+                className="flex-1 bg-gray-700 text-white py-4 rounded-xl font-semibold hover:bg-gray-600 transition-all disabled:opacity-50 border-2 border-gray-600"
                 disabled={isSubmitting}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white py-4 rounded-xl font-semibold hover:from-purple-600 hover:to-blue-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Creating...
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Creating Your Account...
                   </>
                 ) : (
-                  'Create Account'
+                  <>
+                    <span>🚀</span>
+                    Start My Journey
+                  </>
                 )}
               </button>
             </div>
+
+            {/* Benefits */}
+            <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-4">
+              <h4 className="text-blue-400 font-semibold mb-2">🎁 What you'll get:</h4>
+              <ul className="text-blue-300 text-sm space-y-1">
+                <li>• 50 Welcome Points to start your journey</li>
+                <li>• Access to exclusive CARVFi rewards</li>
+                <li>• Personalized SocialFi dashboard</li>
+                <li>• AI-powered Web3 assistant</li>
+              </ul>
+            </div>
+
           </form>
         </div>
       </div>
     );
   }
 
-  // مودال ربط المحفظة العادي
+  // مودال ربط المحفظة العادي (نفس التصميم السابق)
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 w-full max-w-md border border-gray-700 shadow-2xl">
+        
         {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-800">Connect Wallet</h2>
-          <button 
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            ✕
-          </button>
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-2xl mb-4 mx-auto">
+            🔗
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Connect Your Wallet</h2>
+          <p className="text-gray-400">Choose your wallet to continue</p>
         </div>
 
         {/* Tabs */}
-        <div className="flex mb-4 border-b">
+        <div className="flex mb-6 bg-gray-800 rounded-2xl p-1">
           <button
-            className={`flex-1 py-2 font-medium ${
+            className={`flex-1 py-3 font-semibold rounded-xl transition-all ${
               activeTab === 'connect' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
-                : 'text-gray-500'
+                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg' 
+                : 'text-gray-400 hover:text-white'
             }`}
             onClick={() => setActiveTab('connect')}
           >
-            Connect
+            Connect Wallet
           </button>
         </div>
 
-        {/* Content */}
-        <div className="space-y-4">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-semibold mb-2">Available Wallets</h3>
-            <p className="text-sm text-gray-600">
-              Connect your wallet to start using CARVFi
-            </p>
-          </div>
-
-          {/* Wallet List */}
-          <div className="space-y-3">
-            {availableWallets.length > 0 ? (
-              availableWallets.map((wallet, index) => (
-                <button 
-                  key={index}
-                  onClick={() => handleWalletConnect(wallet.name.toLowerCase())}
-                  disabled={isLoading}
-                  className="w-full flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <span className="text-xl">{wallet.icon}</span>
-                  <span className="font-medium">{wallet.name}</span>
-                  {isLoading && (
-                    <div className="ml-auto w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  )}
-                </button>
-              ))
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-gray-500 mb-3">No wallets detected</p>
-                <div className="space-y-2">
-                  <a 
-                    href="https://www.backpack.app/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-block bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700"
-                  >
-                    Install BackPack
-                  </a>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg">
-              <p className="text-sm">{error}</p>
+        {/* Wallet List */}
+        <div className="space-y-3">
+          {availableWallets.length > 0 ? (
+            availableWallets.map((wallet, index) => (
+              <button 
+                key={index}
+                onClick={() => handleWalletConnect(wallet.name.toLowerCase())}
+                disabled={isLoading}
+                className="w-full flex items-center gap-4 p-4 bg-gray-800 border-2 border-gray-700 rounded-xl hover:border-purple-500/50 hover:bg-gray-750 transition-all disabled:opacity-50 group"
+              >
+                <span className="text-2xl group-hover:scale-110 transition-transform">{wallet.icon}</span>
+                <span className="font-semibold text-white flex-1 text-left">{wallet.name}</span>
+                {isLoading && (
+                  <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                )}
+              </button>
+            ))
+          ) : (
+            <div className="text-center py-6">
+              <div className="text-4xl mb-3">🎒</div>
+              <p className="text-gray-400 mb-4">No wallets detected</p>
+              <a 
+                href="https://www.backpack.app/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-block bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-purple-600 hover:to-blue-600 transition-all shadow-lg"
+              >
+                Install BackPack
+              </a>
             </div>
           )}
+        </div>
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <p className="text-sm text-yellow-800">
-              🔒 Your wallet connection is secure and private
-            </p>
+        {error && (
+          <div className="bg-red-900/20 border border-red-500/30 text-red-400 p-4 rounded-xl mt-4">
+            <p className="text-sm">{error}</p>
           </div>
+        )}
+
+        {/* Security Note */}
+        <div className="bg-green-900/20 border border-green-500/30 rounded-xl p-4 mt-6">
+          <div className="flex items-center gap-2 text-green-400 mb-1">
+            <span>🔒</span>
+            <span className="font-semibold">Secure Connection</span>
+          </div>
+          <p className="text-green-300 text-sm">Your wallet connection is encrypted and private</p>
         </div>
 
         {/* Footer */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-gray-700">
           <p className="text-xs text-gray-500 text-center">
-            By connecting, you agree to our Terms of Service
+            By connecting, you agree to our Terms of Service & Privacy Policy
           </p>
         </div>
       </div>

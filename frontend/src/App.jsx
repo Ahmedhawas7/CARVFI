@@ -5,10 +5,12 @@ import AuthModal from './components/AuthModal';
 import RewardsDashboard from './components/RewardsDashboard';
 import UserProfile from './components/UserProfile';
 import BotProtection from './components/BotProtection';
-import AIChat from './components/AIChat';
-import './App.css';
+import AIAssistant from './components/AIAssistant';
+import ModernHeader from './components/ModernHeader';
+import WelcomeHero from './components/WelcomeHero';
+import './styles/global.css';
 
-// خدمة تخزين محلية مبسطة
+// Enhanced Storage Service
 const StorageService = {
   getCurrentUser: () => {
     try {
@@ -25,8 +27,10 @@ const StorageService = {
       
       const users = JSON.parse(localStorage.getItem('carvfi_users') || '{}');
       const userKey = userData.walletAddress?.toLowerCase();
-      users[userKey] = userData;
-      localStorage.setItem('carvfi_users', JSON.stringify(users));
+      if (userKey) {
+        users[userKey] = userData;
+        localStorage.setItem('carvfi_users', JSON.stringify(users));
+      }
       
       return true;
     } catch (error) {
@@ -45,6 +49,7 @@ const AppContent = () => {
   const [user, setUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeFeature, setActiveFeature] = useState('dashboard');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -92,7 +97,7 @@ const AppContent = () => {
 
   if (loading) {
     return (
-      <div className="app-loading">
+      <div className="loading-screen">
         <div className="loading-spinner"></div>
         <p>Loading CARVFi...</p>
       </div>
@@ -100,71 +105,20 @@ const AppContent = () => {
   }
 
   return (
-    <div className="App">
+    <div className="app">
       <BotProtection />
       
-      {/* Navigation Header */}
-      <header className="app-header">
-        <div className="header-content">
-          <div className="logo-section">
-            <h1 className="logo">🚀 CARVFi</h1>
-            <span className="tagline">Social Finance Platform</span>
-          </div>
+      {/* Modern Header */}
+      <ModernHeader 
+        user={user}
+        activeFeature={activeFeature}
+        onFeatureChange={setActiveFeature}
+        onLoginClick={() => setShowAuthModal(true)}
+        onLogoutClick={handleLogout}
+      />
 
-          <nav className="nav-section">
-            {user ? (
-              <>
-                <button 
-                  className="nav-btn"
-                  onClick={() => navigate('/dashboard')}
-                >
-                  Dashboard
-                </button>
-                <button 
-                  className="nav-btn"
-                  onClick={() => navigate('/profile')}
-                >
-                  Profile
-                </button>
-                <button 
-                  className="nav-btn"
-                  onClick={() => navigate('/ai-chat')}
-                >
-                  AI Assistant
-                </button>
-              </>
-            ) : (
-              <button 
-                className="nav-btn"
-                onClick={() => setShowAuthModal(true)}
-              >
-                Features
-              </button>
-            )}
-          </nav>
-
-          <div className="auth-section">
-            {user ? (
-              <div className="user-menu">
-                <span className="welcome-text">Welcome, {user.username}!</span>
-                <button className="logout-btn" onClick={handleLogout}>
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <button 
-                className="login-btn"
-                onClick={() => setShowAuthModal(true)}
-              >
-                Connect Wallet
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content with Router */}
-      <main className="app-main">
+      {/* Main Content */}
+      <main className="main-content">
         <Routes>
           {/* Public Routes */}
           <Route 
@@ -173,18 +127,7 @@ const AppContent = () => {
               user ? (
                 <Navigate to="/dashboard" replace />
               ) : (
-                <div className="welcome-section">
-                  <div className="welcome-content">
-                    <h2>Welcome to CARVFi</h2>
-                    <p>Join our Social Finance platform and start earning rewards today!</p>
-                    <button 
-                      className="cta-button"
-                      onClick={() => setShowAuthModal(true)}
-                    >
-                      Get Started
-                    </button>
-                  </div>
-                </div>
+                <WelcomeHero onGetStarted={() => setShowAuthModal(true)} />
               )
             } 
           />
@@ -205,9 +148,9 @@ const AppContent = () => {
           />
           
           <Route 
-            path="/ai-chat" 
+            path="/ai-assistant" 
             element={
-              user ? <AIChat /> : <Navigate to="/" replace />
+              user ? <AIAssistant user={user} /> : <Navigate to="/" replace />
             } 
           />
           
@@ -230,6 +173,44 @@ const AppContent = () => {
           walletAddress={publicKey}
         />
       )}
+
+      {/* Global Styles */}
+      <style jsx>{`
+        .app {
+          min-height: 100vh;
+          background: var(--gradient-dark);
+          position: relative;
+        }
+
+        .main-content {
+          padding-top: 80px;
+          min-height: calc(100vh - 80px);
+        }
+
+        .loading-screen {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          background: var(--gradient-dark);
+          gap: 20px;
+        }
+
+        .loading-spinner {
+          width: 60px;
+          height: 60px;
+          border: 4px solid rgba(255, 255, 255, 0.1);
+          border-top: 4px solid var(--purple-royal);
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
